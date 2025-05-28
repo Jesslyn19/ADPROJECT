@@ -10,7 +10,7 @@ import Warning from "@material-ui/icons/Warning";
 import DateRange from "@material-ui/icons/DateRange";
 import LocalOffer from "@material-ui/icons/LocalOffer";
 import Update from "@material-ui/icons/Update";
-// import ArrowUpward from "@material-ui/icons/ArrowUpward";
+import ArrowUpward from "@material-ui/icons/ArrowUpward";
 import AccessTime from "@material-ui/icons/AccessTime";
 import Accessibility from "@material-ui/icons/Accessibility";
 import BugReport from "@material-ui/icons/BugReport";
@@ -32,8 +32,8 @@ import CardFooter from "components/Card/CardFooter.js";
 import { bugs, website, server } from "variables/general.js";
 
 import {
-  //dailySalesChart,
-  //emailsSubscriptionChart,
+  dailySalesChart,
+  emailsSubscriptionChart,
   completedTasksChart,
 } from "variables/charts.js";
 
