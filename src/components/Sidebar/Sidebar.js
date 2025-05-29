@@ -83,17 +83,17 @@ export default function Sidebar(props) {
   );
   var brand = (
     <div className={classes.logo}>
-  <div
-    className={classNames(classes.logoLink, {
-      [classes.logoLinkRTL]: props.rtlActive,
-    })}
-  >
-    <div className={classes.logoImage}>
-      <img src={logo} alt="logo" className={classes.img} />
+      <div
+        className={classNames(classes.logoLink, {
+          [classes.logoLinkRTL]: props.rtlActive,
+        })}
+      >
+        <div className={classes.logoImage}>
+          <img src={logo} alt="logo" className={classes.img} />
+        </div>
+        Ultra Kutip
+      </div>
     </div>
-    Ultra Kutip
-  </div>
-  </div>
   );
   return (
     <div>
