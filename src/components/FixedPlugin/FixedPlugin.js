@@ -1,4 +1,4 @@
-/*eslint-disable*/
+﻿/*eslint-disable*/
 import React, { Component } from "react";
 // nodejs library to set properties for components
 import PropTypes from "prop-types";

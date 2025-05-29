@@ -1,4 +1,4 @@
-/*eslint-disable*/
+﻿/*eslint-disable*/
 import React from "react";
 // react plugin for creating charts
 import ChartistGraph from "react-chartist";

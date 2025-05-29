@@ -1,4 +1,4 @@
-# Change Log
+﻿# Change Log
 
 ## [1.10.0] 2020-05-07
 ### Bug fixing
