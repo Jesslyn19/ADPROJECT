@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['bin_plate']
+
+roboflow:
+  workspace: binplate-train
+  project: ad_biplatedetection
+  version: 5
+  license: Public Domain
+  url: https://universe.roboflow.com/binplate-train/ad_biplatedetection/dataset/5

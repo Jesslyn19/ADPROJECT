@@ -24,6 +24,8 @@ import LocationOn from "@material-ui/icons/LocationOn";
 import Notifications from "@material-ui/icons/Notifications";
 import Unarchive from "@material-ui/icons/Unarchive";
 import Language from "@material-ui/icons/Language";
+import ImageIcon from "@material-ui/icons/Image";
+import Image from "views/Image/Image.js";
 // core components/views for Admin layout
 import DashboardPage from "views/Dashboard/Dashboard.js";
 import UserProfile from "views/UserProfile/UserProfile.js";
@@ -83,6 +85,14 @@ const dashboardRoutes = [
     rtlName: "خرائط",
     icon: LocationOn,
     component: Maps,
+    layout: "/admin",
+  },
+  {
+    path: "/image",
+    name: "Image",
+    rtlName: "الصورة",
+    icon: ImageIcon,
+    component: Image,
     layout: "/admin",
   },
   {
