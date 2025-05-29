@@ -1,4 +1,4 @@
-﻿/*!
+/*!
 
  =========================================================
  * Material Dashboard React - v1.10.0 based on Material Dashboard - v1.2.0
@@ -300,5 +300,3 @@ export {
   cardSubtitle,
   cardLink,
 };
-
-

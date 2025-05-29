@@ -1,4 +1,4 @@
-﻿// ##############################
+// ##############################
 // // // javascript library for creating charts
 // #############################
 var Chartist = require("chartist");
@@ -188,5 +188,3 @@ module.exports = {
   emailsSubscriptionChart,
   completedTasksChart,
 };
-
-

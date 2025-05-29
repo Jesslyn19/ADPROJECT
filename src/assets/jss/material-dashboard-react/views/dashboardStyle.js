@@ -1,4 +1,4 @@
-﻿import {
+import {
   successColor,
   whiteColor,
   grayColor,
@@ -80,5 +80,3 @@ const dashboardStyle = {
 };
 
 export default dashboardStyle;
-
-

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 // @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
 // @material-ui/icons
@@ -210,5 +210,3 @@ export default function UpgradeToPro() {
     </GridContainer>
   );
 }
-
-

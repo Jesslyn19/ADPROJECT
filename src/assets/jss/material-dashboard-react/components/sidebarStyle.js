@@ -1,4 +1,4 @@
-﻿import {
+import {
   drawerWidth,
   transition,
   boxShadow,
@@ -299,5 +299,3 @@ const sidebarStyle = (theme) => ({
 });
 
 export default sidebarStyle;
-
-

@@ -1,4 +1,4 @@
-﻿import {
+import {
   primaryColor,
   dangerColor,
   successColor,
@@ -75,5 +75,3 @@ const customInputStyle = {
 };
 
 export default customInputStyle;
-
-

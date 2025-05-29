@@ -1,4 +1,4 @@
-﻿import {
+import {
   defaultFont,
   dangerColor,
   whiteColor,
@@ -111,5 +111,3 @@ const headerLinksStyle = (theme) => ({
 });
 
 export default headerLinksStyle;
-
-

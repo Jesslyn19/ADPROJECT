@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import PropTypes from "prop-types";
 // @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
@@ -20,5 +20,3 @@ export default function Primary(props) {
 Primary.propTypes = {
   children: PropTypes.node,
 };
-
-

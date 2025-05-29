@@ -1,4 +1,4 @@
-﻿/*eslint-disable*/
+/*eslint-disable*/
 import React from "react";
 import PropTypes from "prop-types";
 // @material-ui/core components
@@ -56,5 +56,3 @@ export default function Footer(props) {
     </footer>
   );
 }
-
-

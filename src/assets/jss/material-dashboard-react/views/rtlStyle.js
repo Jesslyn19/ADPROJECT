@@ -1,4 +1,4 @@
-﻿import {
+import {
   successColor,
   whiteColor,
   grayColor,
@@ -83,5 +83,3 @@ const rtlStyle = {
 };
 
 export default rtlStyle;
-
-

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import PropTypes from "prop-types";
 import classnames from "classnames";
 // @material-ui/core components
@@ -104,5 +104,3 @@ Tasks.propTypes = {
   rtlActive: PropTypes.bool,
   checkedIndexes: PropTypes.array,
 };
-
-

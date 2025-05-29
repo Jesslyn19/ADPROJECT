@@ -1,4 +1,4 @@
-﻿import {
+import {
   primaryColor,
   blackColor,
   hexToRgb,
@@ -49,5 +49,3 @@ const checkboxAdnRadioStyle = {
 };
 
 export default checkboxAdnRadioStyle;
-
-

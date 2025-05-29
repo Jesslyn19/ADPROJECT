@@ -1,4 +1,4 @@
-﻿/*eslint-disable*/
+/*eslint-disable*/
 import React from "react";
 import classNames from "classnames";
 import PropTypes from "prop-types";
@@ -157,8 +157,6 @@ Sidebar.propTypes = {
   logo: PropTypes.string,
   image: PropTypes.string,
   logoText: PropTypes.string,
-  routes: PropTypes.arrayOf(PropTypes.object),
+  //routes: PropTypes.arrayOf(PropTypes.object),
   open: PropTypes.bool,
 };
-
-

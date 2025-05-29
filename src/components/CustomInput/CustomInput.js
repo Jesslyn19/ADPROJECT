@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import classNames from "classnames";
 import PropTypes from "prop-types";
 // @material-ui/core components
@@ -90,5 +90,3 @@ CustomInput.propTypes = {
   success: PropTypes.bool,
   rtlActive: PropTypes.bool,
 };
-
-

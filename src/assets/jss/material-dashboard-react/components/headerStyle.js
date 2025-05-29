@@ -1,4 +1,4 @@
-﻿import {
+import {
   container,
   defaultFont,
   primaryColor,
@@ -80,5 +80,3 @@ const headerStyle = () => ({
 });
 
 export default headerStyle;
-
-

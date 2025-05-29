@@ -1,4 +1,4 @@
-﻿import {
+import {
   defaultFont,
   primaryColor,
   dangerColor,
@@ -55,5 +55,3 @@ const tasksStyle = {
   },
 };
 export default tasksStyle;
-
-

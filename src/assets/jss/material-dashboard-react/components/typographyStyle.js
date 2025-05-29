@@ -1,4 +1,4 @@
-﻿import {
+import {
   defaultFont,
   primaryColor,
   infoColor,
@@ -54,5 +54,3 @@ const typographyStyle = {
 };
 
 export default typographyStyle;
-
-

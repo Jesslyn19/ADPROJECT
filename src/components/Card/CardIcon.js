@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 // nodejs library that concatenates classes
 import classNames from "classnames";
 // nodejs library to set properties for components
@@ -39,5 +39,3 @@ CardIcon.propTypes = {
   ]),
   children: PropTypes.node,
 };
-
-

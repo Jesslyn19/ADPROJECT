@@ -1,4 +1,4 @@
-﻿import {
+import {
   warningCardHeader,
   successCardHeader,
   dangerCardHeader,
@@ -122,5 +122,3 @@ const cardHeaderStyle = {
 };
 
 export default cardHeaderStyle;
-
-

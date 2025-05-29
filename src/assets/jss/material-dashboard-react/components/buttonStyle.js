@@ -1,4 +1,4 @@
-﻿import {
+import {
   grayColor,
   primaryColor,
   infoColor,
@@ -340,5 +340,3 @@ const buttonStyle = {
 };
 
 export default buttonStyle;
-
-

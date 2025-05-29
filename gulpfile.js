@@ -1,4 +1,4 @@
-﻿const gulp = require("gulp");
+const gulp = require("gulp");
 const gap = require("gulp-append-prepend");
 
 gulp.task("licenses", async function () {
@@ -72,5 +72,3 @@ gulp.task("licenses", async function () {
     .pipe(gulp.dest("./", { overwrite: true }));
   return;
 });
-
-

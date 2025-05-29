@@ -1,4 +1,4 @@
-﻿import {
+import {
   warningColor,
   primaryColor,
   dangerColor,
@@ -75,5 +75,3 @@ const tableStyle = (theme) => ({
 });
 
 export default tableStyle;
-
-

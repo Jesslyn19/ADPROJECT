@@ -1,4 +1,4 @@
-﻿import {
+import {
   drawerWidth,
   transition,
   container,
@@ -34,5 +34,3 @@ const appStyle = (theme) => ({
 });
 
 export default appStyle;
-
-

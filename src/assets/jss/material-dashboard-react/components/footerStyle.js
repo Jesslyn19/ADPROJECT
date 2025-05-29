@@ -1,4 +1,4 @@
-﻿import {
+import {
   defaultFont,
   container,
   primaryColor,
@@ -52,5 +52,3 @@ const footerStyle = {
   },
 };
 export default footerStyle;
-
-

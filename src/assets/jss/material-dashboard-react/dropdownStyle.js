@@ -1,4 +1,4 @@
-﻿import {
+import {
   primaryColor,
   whiteColor,
   primaryBoxShadow,
@@ -122,5 +122,3 @@ const dropdownStyle = (theme) => ({
 });
 
 export default dropdownStyle;
-
-

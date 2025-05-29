@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 // nodejs library that concatenates classes
 import classNames from "classnames";
 // nodejs library to set properties for components
@@ -36,5 +36,3 @@ Card.propTypes = {
   chart: PropTypes.bool,
   children: PropTypes.node,
 };
-
-

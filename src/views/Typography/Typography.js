@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 // @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
 // core components
@@ -160,5 +160,3 @@ export default function TypographyPage() {
     </Card>
   );
 }
-
-

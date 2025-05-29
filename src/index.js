@@ -1,4 +1,4 @@
-﻿/*!
+/*!
 
 =========================================================
 * Material Dashboard React - v1.10.0
@@ -35,5 +35,3 @@ ReactDOM.render(
   </BrowserRouter>,
   document.getElementById("root")
 );
-
-

@@ -1,4 +1,4 @@
-﻿/*eslint-disable*/
+/*eslint-disable*/
 import React from "react";
 // @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
@@ -63,5 +63,3 @@ export default function Icons() {
     </GridContainer>
   );
 }
-
-

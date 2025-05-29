@@ -1,4 +1,4 @@
-﻿import {
+import {
   blackColor,
   whiteColor,
   hexToRgb,
@@ -38,5 +38,3 @@ const cardStyle = {
 };
 
 export default cardStyle;
-
-

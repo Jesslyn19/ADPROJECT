@@ -1,4 +1,4 @@
-﻿import {
+import {
   defaultFont,
   primaryBoxShadow,
   infoBoxShadow,
@@ -129,5 +129,3 @@ const snackbarContentStyle = {
 };
 
 export default snackbarContentStyle;
-
-

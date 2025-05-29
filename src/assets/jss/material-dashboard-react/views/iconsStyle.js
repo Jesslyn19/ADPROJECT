@@ -1,4 +1,4 @@
-﻿import {
+import {
   boxShadow,
   whiteColor,
   grayColor,
@@ -44,5 +44,3 @@ const iconsStyle = {
 };
 
 export default iconsStyle;
-
-

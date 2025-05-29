@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 // @material-ui/core components
@@ -56,5 +56,3 @@ SnackbarContent.propTypes = {
   icon: PropTypes.object,
   rtlActive: PropTypes.bool,
 };
-
-

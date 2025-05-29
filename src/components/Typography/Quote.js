@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import PropTypes from "prop-types";
 // @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
@@ -22,5 +22,3 @@ Quote.propTypes = {
   text: PropTypes.node,
   author: PropTypes.node,
 };
-
-

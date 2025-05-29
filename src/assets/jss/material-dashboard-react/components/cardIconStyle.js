@@ -1,4 +1,4 @@
-﻿import {
+import {
   warningCardHeader,
   successCardHeader,
   dangerCardHeader,
@@ -28,5 +28,3 @@ const cardIconStyle = {
 };
 
 export default cardIconStyle;
-
-
