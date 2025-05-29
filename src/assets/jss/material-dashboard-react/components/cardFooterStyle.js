@@ -45,3 +45,5 @@ const cardFooterStyle = {
 };
 
 export default cardFooterStyle;
+
+

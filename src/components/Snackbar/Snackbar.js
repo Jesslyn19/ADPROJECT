@@ -72,3 +72,5 @@ Snackbar.propTypes = {
   rtlActive: PropTypes.bool,
   closeNotification: PropTypes.func,
 };
+
+

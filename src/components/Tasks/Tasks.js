@@ -104,3 +104,5 @@ Tasks.propTypes = {
   rtlActive: PropTypes.bool,
   checkedIndexes: PropTypes.array,
 };
+
+

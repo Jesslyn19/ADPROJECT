@@ -56,3 +56,5 @@ SnackbarContent.propTypes = {
   icon: PropTypes.object,
   rtlActive: PropTypes.bool,
 };
+
+

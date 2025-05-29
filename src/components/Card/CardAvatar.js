@@ -34,3 +34,5 @@ CardAvatar.propTypes = {
   profile: PropTypes.bool,
   plain: PropTypes.bool,
 };
+
+

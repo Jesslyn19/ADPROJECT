@@ -188,3 +188,5 @@ module.exports = {
   emailsSubscriptionChart,
   completedTasksChart,
 };
+
+

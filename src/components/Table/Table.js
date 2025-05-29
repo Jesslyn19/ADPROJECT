@@ -71,3 +71,5 @@ CustomTable.propTypes = {
   tableHead: PropTypes.arrayOf(PropTypes.string),
   tableData: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.string)),
 };
+
+

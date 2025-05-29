@@ -153,3 +153,5 @@ FixedPlugin.propTypes = {
   handleColorClick: PropTypes.func,
   handleImageClick: PropTypes.func,
 };
+
+

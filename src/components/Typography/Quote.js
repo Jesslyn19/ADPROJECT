@@ -22,3 +22,5 @@ Quote.propTypes = {
   text: PropTypes.node,
   author: PropTypes.node,
 };
+
+

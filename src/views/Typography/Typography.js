@@ -160,3 +160,5 @@ export default function TypographyPage() {
     </Card>
   );
 }
+
+

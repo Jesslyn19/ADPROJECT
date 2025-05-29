@@ -30,3 +30,5 @@ const cardAvatarStyle = {
 };
 
 export default cardAvatarStyle;
+
+

@@ -44,3 +44,5 @@ const iconsStyle = {
 };
 
 export default iconsStyle;
+
+
