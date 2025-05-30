@@ -24,9 +24,10 @@ import LocationOn from "@material-ui/icons/LocationOn";
 //import Notifications from "@material-ui/icons/Notifications";
 import ImageIcon from "@material-ui/icons/Image";
 import Image from "views/Image/Image.js";
+import Customer from "views/customer/customer.js";
 // core components/views for Admin layout
 import DashboardPage from "views/Dashboard/Dashboard.js";
-import UserProfile from "views/UserProfile/UserProfile.js";
+//import UserProfile from "views/UserProfile/UserProfile.js";
 import TableList from "views/TableList/TableList.js";
 import Typography from "views/Typography/Typography.js";
 //import Icons from "views/Icons/Icons.js";
@@ -42,10 +43,10 @@ const dashboardRoutes = [
     layout: "/admin",
   },
   {
-    path: "/user",
+    path: "/customer",
     name: "Customer List",
     icon: Person,
-    component: UserProfile,
+    component: Customer,
     layout: "/admin",
   },
   {
