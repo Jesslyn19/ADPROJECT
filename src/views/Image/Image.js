@@ -9,6 +9,8 @@ import {
   TableHead,
   TableRow,
   Paper,
+  CircularProgress,
+  Typography,
 } from "@material-ui/core";
 
 import Card from "components/Card/Card.js";
@@ -17,6 +19,8 @@ import CardBody from "components/Card/CardBody.js";
 
 export default function ImagePage() {
   const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const fetchImages = async () => {
     try {
@@ -28,11 +32,23 @@ export default function ImagePage() {
   };
 
   const refreshProcessing = async () => {
+    setLoading(true);
+    setStatusMessage("Start Processing...");
+
     try {
-      await axios.post("http://localhost:5000/api/refresh");
-      fetchImages(); // Refresh the table after processing
+      const res = await axios.post("http://localhost:5000/api/refresh");
+      console.log("Refresh API response:", res.data); // ← ADD THIS
+
+      await fetchImages();
     } catch (error) {
       console.error("Error refreshing images:", error);
+      setStatusMessage("Failed to refresh images.");
+    } finally {
+      setTimeout(() => {
+        setStatusMessage(`Done`);
+        setTimeout(() => setStatusMessage(""), 5000); // Clear after 5s
+      });
+      setLoading(false);
     }
   };
 
@@ -42,11 +58,34 @@ export default function ImagePage() {
 
   return (
     <Card>
-      <CardHeader title="License Plate Detection Records" />
+      <CardHeader>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
+          }}
+        >
+          <h4 className="card-title">License Plate Detection Records</h4>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={refreshProcessing}
+            disabled={loading}
+            startIcon={loading && <CircularProgress size={20} />}
+            style={{ marginLeft: "auto" }}
+          >
+            {loading ? "Processing..." : "🔄 Refresh (Detect New Image)"}
+          </Button>
+        </div>
+      </CardHeader>
       <CardBody>
-        <Button variant="contained" color="primary" onClick={refreshProcessing}>
-          🔄 Refresh (Run Image Processing)
-        </Button>
+        {statusMessage && (
+          <Typography variant="subtitle1" style={{ marginBottom: 12 }}>
+            {statusMessage}
+          </Typography>
+        )}
         <TableContainer component={Paper} style={{ marginTop: "20px" }}>
           <Table>
             <TableHead>
@@ -69,7 +108,9 @@ export default function ImagePage() {
                       View Image
                     </a>
                   </TableCell>
-                  <TableCell>{image.i_date}</TableCell>
+                  <TableCell>
+                    {new Date(image.i_date).toLocaleDateString()}
+                  </TableCell>
                   <TableCell>{image.i_time}</TableCell>
                   <TableCell>{image.i_file}</TableCell>
                 </TableRow>
