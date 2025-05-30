@@ -29,7 +29,7 @@ import CardIcon from "components/Card/CardIcon.js";
 import CardBody from "components/Card/CardBody.js";
 import CardFooter from "components/Card/CardFooter.js";
 
-import MapComponent from "views/Maps/Maps";
+import MapComponent from "views/Maps/MapsDashboard.js";
 
 import { bugs, website, server } from "variables/general.js";
 
@@ -54,7 +54,7 @@ export default function Dashboard() {
               <CardIcon color="warning">
                 <Icon>content_copy</Icon>
               </CardIcon>
-              <p className={classes.cardCategory}>Used Space</p>
+              <p className={classes.cardCategory}>Total Bins</p>
               <h3 className={classes.cardTitle}>
                 49/50 <small>GB</small>
               </h3>
@@ -77,7 +77,7 @@ export default function Dashboard() {
               <CardIcon color="success">
                 <Store />
               </CardIcon>
-              <p className={classes.cardCategory}>Revenue</p>
+              <p className={classes.cardCategory}>Total Collected</p>
               <h3 className={classes.cardTitle}>$34,245</h3>
             </CardHeader>
             <CardFooter stats>
@@ -94,7 +94,7 @@ export default function Dashboard() {
               <CardIcon color="danger">
                 <Icon>info_outline</Icon>
               </CardIcon>
-              <p className={classes.cardCategory}>Fixed Issues</p>
+              <p className={classes.cardCategory}>Total Missed</p>
               <h3 className={classes.cardTitle}>75</h3>
             </CardHeader>
             <CardFooter stats>
@@ -111,7 +111,7 @@ export default function Dashboard() {
               <CardIcon color="info">
                 <Accessibility />
               </CardIcon>
-              <p className={classes.cardCategory}>Followers</p>
+              <p className={classes.cardCategory}>Total Customers</p>
               <h3 className={classes.cardTitle}>+245</h3>
             </CardHeader>
             <CardFooter stats>

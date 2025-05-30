@@ -96,9 +96,22 @@ app.delete('/api/customers/:id', async (req, res) => {
     }
 });
 
+app.get('/api/smartbins', async (req, res) => {
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        const [rows] = await connection.execute('SELECT sb_id, sb_plate, sb_latitude, sb_longitude, sb_status, c_id, t_id FROM tb_smartbin');
+        await connection.end();
+
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ===============================
 // Start Server
 // ===============================
 app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
