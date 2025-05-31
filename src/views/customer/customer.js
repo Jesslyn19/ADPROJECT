@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Button,
@@ -72,7 +72,7 @@ export default function Customer() {
     try {
       await axios.put(
         `http://localhost:5000/api/customers/${editingCustomer.c_id}`,
-        editingCustomer
+        editingCustomer,
       );
       fetchCustomers();
       handleDialogClose();

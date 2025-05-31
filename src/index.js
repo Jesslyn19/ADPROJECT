@@ -1,4 +1,4 @@
-/*!
+﻿/*!
 
 =========================================================
 * Material Dashboard React - v1.10.0
@@ -31,5 +31,5 @@ ReactDOM.render(
       <Redirect from="/" to="/admin/dashboard" />
     </Switch>
   </BrowserRouter>,
-  document.getElementById("root")
+  document.getElementById("root"),
 );

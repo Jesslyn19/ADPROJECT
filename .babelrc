@@ -1,4 +1,4 @@
-{
+﻿{
   "presets": ["es2015"],
   "plugins": [
     "transform-class-properties",
@@ -13,4 +13,3 @@
     ["import-rename", { "^(.*)\\.jsx$": "$1" }]
   ]
 }
-

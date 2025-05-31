@@ -1,4 +1,4 @@
-import {
+﻿import {
   defaultFont,
   dangerColor,
   whiteColor,

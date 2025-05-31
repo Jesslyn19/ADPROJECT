@@ -1,4 +1,4 @@
-module.exports = {
+﻿module.exports = {
   parser: "babel-eslint",
   env: {
     es6: true,
@@ -19,4 +19,3 @@ module.exports = {
     "plugin:prettier/recommended",
   ],
 };
-
