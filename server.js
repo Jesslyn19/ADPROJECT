@@ -142,6 +142,82 @@ app.get('/api/smartbins', async (req, res) => {
 });
 
 // ===============================
+// 🚛 Truck Routes
+// ===============================
+// GET all trucks
+app.get('/api/trucks', async (req, res) => {
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        const [rows] = await connection.execute(
+            'SELECT t_id, t_plate FROM tb_truck ORDER BY t_id ASC'
+        );
+        await connection.end();
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// CREATE a new truck (t_id is auto-incremented)
+app.post('/api/trucks', async (req, res) => {
+    const { t_plate } = req.body;
+
+    if (!t_plate) {
+        return res.status(400).json({ error: 't_plate is required' });
+    }
+
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        const [result] = await connection.execute(
+            `INSERT INTO tb_truck (t_plate) VALUES (?)`,
+            [t_plate]
+        );
+        await connection.end();
+
+        res.status(201).json({
+            message: 'Truck created successfully',
+            truckId: result.insertId
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// UPDATE a truck
+app.put('/api/trucks/:id', async (req, res) => {
+    const { t_plate } = req.body;
+
+    if (!t_plate) {
+        return res.status(400).json({ error: 't_plate is required' });
+    }
+
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        await connection.execute(
+            `UPDATE tb_truck SET t_plate = ? WHERE t_id = ?`,
+            [t_plate, req.params.id]
+        );
+        await connection.end();
+
+        res.json({ message: 'Truck updated successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE a truck
+app.delete('/api/trucks/:id', async (req, res) => {
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        await connection.execute('DELETE FROM tb_truck WHERE t_id = ?', [req.params.id]);
+        await connection.end();
+
+        res.json({ message: 'Truck deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ===============================
 // Start Server
 // ===============================
 app.listen(PORT, () => {

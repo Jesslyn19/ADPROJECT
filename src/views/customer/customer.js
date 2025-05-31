@@ -25,6 +25,7 @@ export default function Customer() {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     c_name: "",
     c_street: "",
@@ -105,6 +106,7 @@ export default function Customer() {
         c_state: "",
         c_country: "",
       });
+      setShowForm(false);
     } catch (error) {
       console.error("Error creating customer:", error);
       alert("Failed to create customer.");
@@ -119,79 +121,91 @@ export default function Customer() {
 
   return (
     <div style={{ padding: 20 }}>
-      <Paper style={{ padding: 20, marginBottom: 30 }}>
-        <Typography variant="h5" gutterBottom>
-          Create New Customer
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              name="c_name"
-              label="Name"
-              value={newCustomer.c_name}
-              onChange={handleNewCustomerChange}
-              fullWidth
-            />
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => setShowForm(!showForm)}
+        style={{ marginBottom: 20 }}
+      >
+        {showForm ? "Hide Form" : "Create New Customer"}
+      </Button>
+
+      {showForm && (
+        <Paper style={{ padding: 20, marginBottom: 30 }}>
+          <Typography variant="h5" gutterBottom>
+            Create New Customer
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="c_name"
+                label="Name"
+                value={newCustomer.c_name}
+                onChange={handleNewCustomerChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="c_street"
+                label="Street"
+                value={newCustomer.c_street}
+                onChange={handleNewCustomerChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="c_postcode"
+                label="Postcode"
+                value={newCustomer.c_postcode}
+                onChange={handleNewCustomerChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="c_city"
+                label="City"
+                value={newCustomer.c_city}
+                onChange={handleNewCustomerChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="c_state"
+                label="State"
+                value={newCustomer.c_state}
+                onChange={handleNewCustomerChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                name="c_country"
+                label="Country"
+                value={newCustomer.c_country}
+                onChange={handleNewCustomerChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleCreateCustomer}
+                disabled={creating}
+                fullWidth
+                style={{ padding: 10 }}
+              >
+                {creating ? "Creating..." : "Create Customer"}
+              </Button>
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              name="c_street"
-              label="Street"
-              value={newCustomer.c_street}
-              onChange={handleNewCustomerChange}
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              name="c_postcode"
-              label="Postcode"
-              value={newCustomer.c_postcode}
-              onChange={handleNewCustomerChange}
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              name="c_city"
-              label="City"
-              value={newCustomer.c_city}
-              onChange={handleNewCustomerChange}
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              name="c_state"
-              label="State"
-              value={newCustomer.c_state}
-              onChange={handleNewCustomerChange}
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              name="c_country"
-              label="Country"
-              value={newCustomer.c_country}
-              onChange={handleNewCustomerChange}
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleCreateCustomer}
-              disabled={creating}
-              fullWidth
-              style={{ padding: 10 }}
-            >
-              {creating ? "Creating..." : "Create Customer"}
-            </Button>
-          </Grid>
-        </Grid>
-      </Paper>
+        </Paper>
+      )}
+
       <Typography variant="h4" gutterBottom>
         Customer List
       </Typography>
