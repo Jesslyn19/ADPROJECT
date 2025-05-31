@@ -58,12 +58,45 @@ app.post('/api/refresh', (req, res) => {
 app.get('/api/customers', async (req, res) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT * FROM tb_customer ORDER BY c_id ASC'); 
+        const [rows] = await connection.execute('SELECT * FROM tb_customer ORDER BY c_id ASC');
         await connection.end();
+
+        console.log("Fetched from DB:", rows);
         res.json(rows);
+    } catch (error) {
+        console.error("Error in /api/customers:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// CREATE a new customer
+app.post('/api/customers', async (req, res) => {
+    const { c_name, c_street, c_postcode, c_city, c_state, c_country } = req.body;
+
+    if (!c_name || !c_street || !c_postcode || !c_city || !c_state || !c_country) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+    console.log('Received new customer:', req.body);
+
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        const [result] = await connection.execute(
+            `INSERT INTO tb_customer (c_name, c_street, c_postcode, c_city, c_state, c_country) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
+            [c_name, c_street, c_postcode, c_city, c_state, c_country]
+        );
+        await connection.end();
+
+        console.log('Customer inserted with ID:', result.insertId);
+
+        res.status(201).json({
+            message: 'Customer created successfully',
+            customerId: result.insertId
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+
 });
 
 // UPDATE a customer

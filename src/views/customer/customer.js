@@ -15,6 +15,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Grid,
+  Typography,
 } from "@material-ui/core";
 
 export default function Customer() {
@@ -22,6 +24,15 @@ export default function Customer() {
   const [loading, setLoading] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    c_name: "",
+    c_street: "",
+    c_postcode: "",
+    c_city: "",
+    c_state: "",
+    c_country: "",
+  });
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -39,7 +50,7 @@ export default function Customer() {
     if (window.confirm("Are you sure you want to delete this customer?")) {
       try {
         await axios.delete(`http://localhost:5000/api/customers/${id}`);
-        fetchCustomers(); // Refresh data
+        fetchCustomers();
       } catch (error) {
         console.error("Error deleting customer:", error);
       }
@@ -74,13 +85,116 @@ export default function Customer() {
     setEditingCustomer({ ...editingCustomer, [name]: value });
   };
 
+  const handleNewCustomerChange = (e) => {
+    const { name, value } = e.target;
+    setNewCustomer({ ...newCustomer, [name]: value });
+  };
+
+  const handleCreateCustomer = async () => {
+    if (creating) return;
+    setCreating(true);
+    try {
+      await axios.post("http://localhost:5000/api/customers", newCustomer);
+      await fetchCustomers();
+      alert("Customer created successfully!");
+      setNewCustomer({
+        c_name: "",
+        c_street: "",
+        c_postcode: "",
+        c_city: "",
+        c_state: "",
+        c_country: "",
+      });
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      alert("Failed to create customer.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   useEffect(() => {
     fetchCustomers();
   }, []);
 
   return (
-    <div>
-      <h2>Customer List</h2>
+    <div style={{ padding: 20 }}>
+      <Paper style={{ padding: 20, marginBottom: 30 }}>
+        <Typography variant="h5" gutterBottom>
+          Create New Customer
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              name="c_name"
+              label="Name"
+              value={newCustomer.c_name}
+              onChange={handleNewCustomerChange}
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              name="c_street"
+              label="Street"
+              value={newCustomer.c_street}
+              onChange={handleNewCustomerChange}
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              name="c_postcode"
+              label="Postcode"
+              value={newCustomer.c_postcode}
+              onChange={handleNewCustomerChange}
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              name="c_city"
+              label="City"
+              value={newCustomer.c_city}
+              onChange={handleNewCustomerChange}
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              name="c_state"
+              label="State"
+              value={newCustomer.c_state}
+              onChange={handleNewCustomerChange}
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              name="c_country"
+              label="Country"
+              value={newCustomer.c_country}
+              onChange={handleNewCustomerChange}
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreateCustomer}
+              disabled={creating}
+              fullWidth
+              style={{ padding: 10 }}
+            >
+              {creating ? "Creating..." : "Create Customer"}
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
+      <Typography variant="h4" gutterBottom>
+        Customer List
+      </Typography>
       {loading ? (
         <CircularProgress />
       ) : (
@@ -129,7 +243,6 @@ export default function Customer() {
         </TableContainer>
       )}
 
-      {/* Edit Dialog */}
       <Dialog open={openDialog} onClose={handleDialogClose}>
         <DialogTitle>Edit Customer</DialogTitle>
         <DialogContent>
