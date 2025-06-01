@@ -1,4 +1,4 @@
-﻿
+
 AD_BiPlateDetection - v5 2025-05-28 8:30pm
 ==============================
 
@@ -27,6 +27,5 @@ The following pre-processing was applied to each image:
 The following augmentation was applied to create 3 versions of each source image:
 * Random rotation of between -10 and +10 degrees
 * Random brigthness adjustment of between -20 and +20 percent
-
 
 

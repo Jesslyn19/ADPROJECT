@@ -182,11 +182,10 @@ app.post("/api/trucks", async (req, res) => {
 
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [
-      result,
-    ] = await connection.execute(`INSERT INTO tb_truck (t_plate) VALUES (?)`, [
-      t_plate,
-    ]);
+    const [result] = await connection.execute(
+      `INSERT INTO tb_truck (t_plate) VALUES (?)`,
+      [t_plate]
+    );
     await connection.end();
 
     res.status(201).json({
