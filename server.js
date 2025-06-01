@@ -1,11 +1,11 @@
-const express = require("express");
+﻿const express = require("express");
 const mysql = require("mysql2/promise");
 const path = require("path");
 const cors = require("cors");
 const { exec } = require("child_process");
 
 const app = express();
-const PORT = 3001;
+const PORT = 5000;
 
 // Enable CORS and JSON body parsing
 app.use(cors());
