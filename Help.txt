@@ -1,0 +1,8 @@
+To solve prettier and clrf:
+1. npm install --save-dev prettier
+2. npx prettier --write .
+3. npm run start:legacy
+
+To solve Error: error:0308010C:digital envelope routines::unsupported
+1. $env:NODE_OPTIONS="--openssl-legacy-provider"
+2. npm run start:legacy
