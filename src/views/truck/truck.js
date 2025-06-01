@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Button,
@@ -67,7 +67,7 @@ export default function Truck() {
     try {
       await axios.put(
         `http://localhost:5000/api/trucks/${editingTruck.t_id}`,
-        editingTruck,
+        editingTruck
       );
       fetchTrucks();
       handleDialogClose();
