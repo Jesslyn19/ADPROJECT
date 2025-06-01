@@ -155,6 +155,67 @@ app.get("/api/smartbins", async (req, res) => {
   }
 });
 
+// CREATE a new bin
+app.post("/api/smartbins", async (req, res) => {
+  const { sb_plate, sb_latitude, sb_longitude, c_id, t_id } = req.body;
+
+  if (!sb_plate || !sb_latitude || !sb_longitude || !c_id || !t_id) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+  console.log("Received new bin:", req.body);
+
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [result] = await connection.execute(
+      `INSERT INTO tb_smartbin (sb_plate, sb_latitude, sb_longitude, c_id, t_id) 
+         VALUES (?, ?, ?, ?, ?)`,
+      [sb_plate, sb_latitude, sb_longitude, c_id, t_id]
+    );
+    await connection.end();
+
+    console.log("Bin inserted with ID:", result.insertId);
+
+    res.status(201).json({
+      message: "Bin created successfully",
+      binId: result.insertId,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// UPDATE a smartbin
+app.put("/api/smartbins/:id", async (req, res) => {
+  const { sb_plate, sb_latitude, sb_longitude, c_id, t_id } = req.body;
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    await connection.execute(
+      `UPDATE tb_smartbin 
+             SET sb_plate=?, sb_latitude=?, sb_longitude=?, c_id=?, t_id=? 
+             WHERE sb_id=?`,
+      [sb_plate, sb_latitude, sb_longitude, c_id, t_id, req.params.id]
+    );
+    await connection.end();
+    res.json({ message: "Bin updated successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE a smartbin
+app.delete("/api/smartbins/:id", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    await connection.execute("DELETE FROM tb_smartbin WHERE sb_id = ?", [
+      req.params.id,
+    ]);
+    await connection.end();
+    res.json({ message: "Bin deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ===============================
 // 🚛 Truck Routes
 // ===============================

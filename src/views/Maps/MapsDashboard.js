@@ -228,9 +228,9 @@ const MapComponent = () => {
               position={{ lat: bin.sb_latitude, lng: bin.sb_longitude }}
               icon={{
                 url:
-                  bin.sb_status === "GREEN"
+                  bin.sb_status === "Collected"
                     ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
-                    : bin.sb_status === "YELLOW"
+                    : bin.sb_status === "Collecting"
                     ? "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
                     : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
               }}
