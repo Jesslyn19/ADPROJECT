@@ -31,7 +31,7 @@ app.get("/api/images", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      "SELECT * FROM tb_image ORDER BY i_id DESC",
+      "SELECT * FROM tb_image ORDER BY i_id DESC"
     );
     await connection.end();
 
@@ -61,7 +61,7 @@ app.get("/api/customers", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      "SELECT * FROM tb_customer ORDER BY c_id ASC",
+      "SELECT * FROM tb_customer ORDER BY c_id ASC"
     );
     await connection.end();
 
@@ -94,7 +94,7 @@ app.post("/api/customers", async (req, res) => {
     const [result] = await connection.execute(
       `INSERT INTO tb_customer (c_name, c_street, c_postcode, c_city, c_state, c_country) 
          VALUES (?, ?, ?, ?, ?, ?)`,
-      [c_name, c_street, c_postcode, c_city, c_state, c_country],
+      [c_name, c_street, c_postcode, c_city, c_state, c_country]
     );
     await connection.end();
 
@@ -118,7 +118,7 @@ app.put("/api/customers/:id", async (req, res) => {
       `UPDATE tb_customer 
              SET c_name=?, c_street=?, c_postcode=?, c_city=?, c_state=?, c_country=? 
              WHERE c_id=?`,
-      [c_name, c_street, c_postcode, c_city, c_state, c_country, req.params.id],
+      [c_name, c_street, c_postcode, c_city, c_state, c_country, req.params.id]
     );
     await connection.end();
     res.json({ message: "Customer updated successfully" });
@@ -145,7 +145,7 @@ app.get("/api/smartbins", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      "SELECT sb_id, sb_plate, sb_latitude, sb_longitude, sb_status, c_id, t_id FROM tb_smartbin",
+      "SELECT sb_id, sb_plate, sb_latitude, sb_longitude, sb_status, c_id, t_id FROM tb_smartbin"
     );
     await connection.end();
 
@@ -163,7 +163,7 @@ app.get("/api/trucks", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      "SELECT t_id, t_plate FROM tb_truck ORDER BY t_id ASC",
+      "SELECT t_id, t_plate FROM tb_truck ORDER BY t_id ASC"
     );
     await connection.end();
     res.json(rows);
@@ -182,10 +182,11 @@ app.post("/api/trucks", async (req, res) => {
 
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [result] = await connection.execute(
-      `INSERT INTO tb_truck (t_plate) VALUES (?)`,
-      [t_plate],
-    );
+    const [
+      result,
+    ] = await connection.execute(`INSERT INTO tb_truck (t_plate) VALUES (?)`, [
+      t_plate,
+    ]);
     await connection.end();
 
     res.status(201).json({

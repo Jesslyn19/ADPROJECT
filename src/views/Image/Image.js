@@ -11,6 +11,8 @@ import {
   Paper,
   CircularProgress,
   Typography,
+  TextField,
+  MenuItem,
 } from "@material-ui/core";
 
 import Card from "components/Card/Card.js";
@@ -21,6 +23,10 @@ export default function ImagePage() {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [searchPlate, setSearchPlate] = useState("");
+  const [sortOrder, setSortOrder] = useState("newest");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const fetchImages = async () => {
     try {
@@ -46,7 +52,7 @@ export default function ImagePage() {
     } finally {
       setTimeout(() => {
         setStatusMessage(`Done`);
-        setTimeout(() => setStatusMessage(""), 5000); // Clear after 5s
+        setTimeout(() => setStatusMessage(""), 2000); // Clear after 5s
       });
       setLoading(false);
     }
@@ -56,28 +62,111 @@ export default function ImagePage() {
     fetchImages();
   }, []);
 
+  const filteredAndSortedImages = images
+    .filter((image) => {
+      const plateMatch = image.i_plate
+        .toLowerCase()
+        .includes(searchPlate.toLowerCase());
+
+      const imageDate = new Date(image.i_date);
+      const start = startDate
+        ? new Date(new Date(startDate).setHours(0, 0, 0, 0))
+        : null;
+      const end = endDate
+        ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+        : null;
+
+      const isAfterStart = !start || imageDate >= start;
+      const isBeforeEnd = !end || imageDate <= end;
+
+      return plateMatch && isAfterStart && isBeforeEnd;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.i_date);
+      const dateB = new Date(b.i_date);
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
+
   return (
     <Card>
       <CardHeader>
         <div
           style={{
+            backgroundColor: "#09c3d8",
+            padding: "16px",
+            borderRadius: "4px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            width: "100%",
+            flexWrap: "wrap",
           }}
         >
-          <h4 className="card-title">License Plate Detection Records</h4>
+          <h4
+            className="card-title"
+            style={{
+              fontSize: "1.75rem",
+              fontWeight: "600",
+              color: "#000000", // Optional: dark green
+              margin: 0,
+            }}
+          >
+            License Plate Detection Records
+          </h4>
           <Button
             variant="contained"
             color="primary"
             onClick={refreshProcessing}
             disabled={loading}
             startIcon={loading && <CircularProgress size={20} />}
-            style={{ marginLeft: "auto" }}
           >
             {loading ? "Processing..." : "🔄 Refresh (Detect New Image)"}
           </Button>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            gap: "16px",
+            marginTop: "30px",
+            flexWrap: "wrap",
+          }}
+        >
+          <TextField
+            label="Search Plate"
+            variant="outlined"
+            size="small"
+            value={searchPlate}
+            onChange={(e) => setSearchPlate(e.target.value)}
+            style={{ minWidth: 180 }}
+          />
+          <TextField
+            select
+            label="Sort by Time"
+            variant="outlined"
+            size="small"
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            style={{ minWidth: 180 }}
+          >
+            <MenuItem value="newest">Newest First</MenuItem>
+            <MenuItem value="oldest">Oldest First</MenuItem>
+          </TextField>
+
+          <TextField
+            label="Start Date"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            size="small"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+          <TextField
+            label="End Date"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            size="small"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
         </div>
       </CardHeader>
       <CardBody>
@@ -99,7 +188,7 @@ export default function ImagePage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {images.map((image) => (
+              {filteredAndSortedImages.map((image) => (
                 <TableRow key={image.i_id}>
                   <TableCell>{image.i_id}</TableCell>
                   <TableCell>{image.i_plate}</TableCell>
