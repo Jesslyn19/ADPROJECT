@@ -92,7 +92,7 @@ CustomTabs.propTypes = {
       tabName: PropTypes.string.isRequired,
       tabIcon: PropTypes.object,
       tabContent: PropTypes.node.isRequired,
-    }),
+    })
   ),
   rtlActive: PropTypes.bool,
   plainTabs: PropTypes.bool,

@@ -169,7 +169,7 @@ const MapComponent = () => {
               }
             }, 300);
           }
-        },
+        }
       );
     });
     setSteps(newSteps);
@@ -231,8 +231,8 @@ const MapComponent = () => {
                   bin.sb_status === "GREEN"
                     ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
                     : bin.sb_status === "YELLOW"
-                      ? "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
-                      : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                    ? "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
+                    : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
               }}
             />
           ))}

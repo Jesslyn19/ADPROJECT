@@ -72,7 +72,7 @@ export default function Customer() {
     try {
       await axios.put(
         `http://localhost:5000/api/customers/${editingCustomer.c_id}`,
-        editingCustomer,
+        editingCustomer
       );
       fetchCustomers();
       handleDialogClose();
