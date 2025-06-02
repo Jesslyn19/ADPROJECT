@@ -52,6 +52,31 @@ app.post("/api/refresh", (req, res) => {
   });
 });
 
+app.put('/api/images/:id', async (req, res) => {
+  const { id } = req.params;
+  const { i_plate } = req.body;
+
+  if (!i_plate) {
+    return res.status(400).json({ error: 'Plate number is required' });
+  }
+
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [result] = await connection.execute(
+      'UPDATE tb_image SET i_plate = ? WHERE i_id = ?',
+      [i_plate, id]
+    );
+    await connection.end();
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+    res.status(200).json({ message: 'Plate number updated successfully' });
+  } catch (error) {
+    console.error('Error updating plate number:', error);
+    res.status(500).json({ error: 'Failed to update plate number' });
+  }
+});
+
 // ===============================
 // 👤 Customer Routes
 // ===============================

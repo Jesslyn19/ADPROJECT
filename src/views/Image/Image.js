@@ -13,6 +13,10 @@ import {
   Typography,
   TextField,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@material-ui/core";
 
 import Card from "components/Card/Card.js";
@@ -27,6 +31,11 @@ export default function ImagePage() {
   const [sortOrder, setSortOrder] = useState("newest");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [binPlates, setBinPlates] = useState([]);
+  const [plateStatusFilter, setPlateStatusFilter] = useState("all");
+  const [openEdit, setOpenEdit] = useState(false);
+  const [editImage, setEditImage] = useState(null);
+  const [editPlate, setEditPlate] = useState("");
 
   const fetchImages = async () => {
     try {
@@ -60,6 +69,7 @@ export default function ImagePage() {
 
   useEffect(() => {
     fetchImages();
+    fetchSmartBins();
   }, []);
 
   const filteredAndSortedImages = images
@@ -79,13 +89,37 @@ export default function ImagePage() {
       const isAfterStart = !start || imageDate >= start;
       const isBeforeEnd = !end || imageDate <= end;
 
-      return plateMatch && isAfterStart && isBeforeEnd;
+      const isKnown = binPlates.includes(image.i_plate.toLowerCase());
+
+      const matchesPlateStatus =
+        plateStatusFilter === "all" ||
+        (plateStatusFilter === "attention" && !isKnown) ||
+        (plateStatusFilter === "no-attention" && isKnown);
+
+      return plateMatch && isAfterStart && isBeforeEnd && matchesPlateStatus;
     })
     .sort((a, b) => {
       const dateA = new Date(a.i_date);
       const dateB = new Date(b.i_date);
       return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
     });
+
+  const clearFilters = () => {
+    setSearchPlate("");
+    setStartDate("");
+    setEndDate("");
+    setSortOrder("newest");
+    setPlateStatusFilter("all"); // Optional: reset sort order
+  };
+
+  const fetchSmartBins = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/smartbins");
+      setBinPlates(res.data.map((bin) => bin.sb_plate.toLowerCase())); // Normalize to lowercase
+    } catch (error) {
+      console.error("Error fetching smartbin data:", error);
+    }
+  };
 
   return (
     <Card>
@@ -167,6 +201,28 @@ export default function ImagePage() {
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />
+
+          <TextField
+            select
+            label="Plate Status"
+            variant="outlined"
+            size="small"
+            value={plateStatusFilter}
+            onChange={(e) => setPlateStatusFilter(e.target.value)}
+            style={{ minWidth: 180 }}
+          >
+            <MenuItem value="all">All</MenuItem>
+            <MenuItem value="attention">⚠️ With Attention</MenuItem>
+            <MenuItem value="no-attention">✅ No Attention</MenuItem>
+          </TextField>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={clearFilters}
+            style={{ height: "40px", alignSelf: "center" }}
+          >
+            Clear Filters
+          </Button>
         </div>
       </CardHeader>
       <CardBody>
@@ -175,7 +231,14 @@ export default function ImagePage() {
             {statusMessage}
           </Typography>
         )}
-        <TableContainer component={Paper} style={{ marginTop: "20px" }}>
+        <TableContainer
+          component={Paper}
+          style={{
+            marginTop: "20px",
+            maxHeight: "400px",
+            overflow: "auto",
+          }}
+        >
           <Table>
             <TableHead>
               <TableRow>
@@ -185,12 +248,23 @@ export default function ImagePage() {
                 <TableCell>Capture Date</TableCell>
                 <TableCell>Capture Time</TableCell>
                 <TableCell>File Name</TableCell>
+                <TableCell>Edit</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredAndSortedImages.map((image) => (
                 <TableRow key={image.i_id}>
-                  <TableCell>{image.i_id}</TableCell>
+                  <TableCell>
+                    {image.i_id}{" "}
+                    {!binPlates.includes(image.i_plate.toLowerCase()) && (
+                      <span
+                        title="Unregistered Plate"
+                        style={{ color: "orange" }}
+                      >
+                        ⚠️
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell>{image.i_plate}</TableCell>
                   <TableCell>
                     <a href={image.i_url} target="_blank" rel="noreferrer">
@@ -202,12 +276,112 @@ export default function ImagePage() {
                   </TableCell>
                   <TableCell>{image.i_time}</TableCell>
                   <TableCell>{image.i_file}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        setEditImage(image);
+                        setEditPlate(image.i_plate);
+                        setOpenEdit(true);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
       </CardBody>
+      <Dialog
+        open={openEdit}
+        onClose={() => setOpenEdit(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Edit Plate Number</DialogTitle>
+
+        {editImage ? (
+          <DialogContent dividers>
+            <Table size="small">
+              <TableBody>
+                <TableRow>
+                  <TableCell>
+                    <strong>ID</strong>
+                  </TableCell>
+                  <TableCell>{editImage.i_id}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>
+                    <strong>File Name</strong>
+                  </TableCell>
+                  <TableCell>{editImage.i_file}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>
+                    <strong>Capture Date</strong>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(editImage.i_date).toLocaleDateString()}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>
+                    <strong>Capture Time</strong>
+                  </TableCell>
+                  <TableCell>{editImage.i_time}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>
+                    <strong>Plate Number (Editable)</strong>
+                  </TableCell>
+                  <TableCell>
+                    <TextField
+                      value={editPlate}
+                      onChange={(e) => setEditPlate(e.target.value)}
+                      fullWidth
+                      autoFocus
+                      variant="outlined"
+                      size="small"
+                    />
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </DialogContent>
+        ) : (
+          <DialogContent>
+            <p>Loading...</p>
+          </DialogContent>
+        )}
+
+        <DialogActions>
+          <Button onClick={() => setOpenEdit(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button
+            onClick={async () => {
+              try {
+                await axios.put(
+                  `http://localhost:5000/api/images/${editImage.i_id}`,
+                  { i_plate: editPlate }
+                );
+                setOpenEdit(false);
+                fetchImages();
+              } catch (error) {
+                console.error("Error updating plate:", error);
+              }
+            }}
+            color="primary"
+            variant="contained"
+            disabled={!editImage} // disable save if no editImage
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

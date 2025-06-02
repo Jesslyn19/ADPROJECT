@@ -6,3 +6,4 @@ To solve prettier and clrf:
 To solve Error: error:0308010C:digital envelope routines::unsupported
 1. $env:NODE_OPTIONS="--openssl-legacy-provider"
 2. npm run start:legacy
+
