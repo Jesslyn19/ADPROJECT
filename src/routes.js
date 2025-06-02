@@ -33,6 +33,7 @@ import Bin from "views/bin/bin.js";
 //import Typography from "views/Typography/Typography.js";
 //import Icons from "views/Icons/Icons.js";
 import Maps from "views/Maps/Maps.js";
+import Task from "views/Task/Task.js";
 //import NotificationsPage from "views/Notifications/Notifications.js";
 
 const dashboardRoutes = [
@@ -76,6 +77,14 @@ const dashboardRoutes = [
     name: "Maps",
     icon: LocationOn,
     component: Maps,
+    layout: "/admin",
+  },
+
+  {
+    path: "/task",
+    name: "Task List",
+    icon: LibraryBooks, // or any icon you prefer
+    component: Task,
     layout: "/admin",
   },
   {
