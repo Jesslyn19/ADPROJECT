@@ -224,7 +224,7 @@ app.get("/api/trucks", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      "SELECT t_id, t_plate FROM tb_truck ORDER BY t_id ASC"
+      "SELECT t_id, t_plate, t_dname FROM tb_truck ORDER BY t_id ASC"
     );
     await connection.end();
     res.json(rows);
