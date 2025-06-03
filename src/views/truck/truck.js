@@ -17,10 +17,12 @@ import {
   TextField,
   Typography,
   Grid,
+  MenuItem,
 } from "@material-ui/core";
 
 export default function Truck() {
   const [trucks, setTrucks] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingTruck, setEditingTruck] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -28,6 +30,8 @@ export default function Truck() {
   const [showForm, setShowForm] = useState(false);
   const [newTruck, setNewTruck] = useState({
     t_plate: "",
+    driver_id: "",
+    t_capacity: "",
   });
 
   const fetchTrucks = async () => {
@@ -42,6 +46,27 @@ export default function Truck() {
     }
   };
 
+  const fetchDrivers = async () => {
+    console.log("fetchDrivers function called");
+    try {
+      const res = await axios.get("http://localhost:5000/api/drivers?role=2");
+      console.log("Fetched drivers:", res.data);
+      setDrivers(res.data);
+    } catch (error) {
+      console.error("Error fetching drivers:", error);
+    }
+  };
+
+  useEffect(() => {
+    console.log("useEffect triggered: Trucks");
+    fetchTrucks();
+  }, []);
+
+  useEffect(() => {
+    console.log("useEffect triggered: Drivers");
+    fetchDrivers();
+  }, []);
+
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this truck?")) {
       try {
@@ -54,7 +79,7 @@ export default function Truck() {
   };
 
   const handleEdit = (truck) => {
-    setEditingTruck(truck);
+    setEditingTruck({ ...truck }); // Clone to allow editing
     setOpenDialog(true);
   };
 
@@ -90,10 +115,11 @@ export default function Truck() {
     if (creating) return;
     setCreating(true);
     try {
+      console.log("Creating truck with data:", newTruck);
       await axios.post("http://localhost:5000/api/trucks", newTruck);
       await fetchTrucks();
       alert("Truck created successfully!");
-      setNewTruck({ t_plate: "" });
+      setNewTruck({ t_plate: "", driver_id: "", t_capacity: "" });
       setShowForm(false);
     } catch (error) {
       console.error("Error creating truck:", error);
@@ -102,10 +128,6 @@ export default function Truck() {
       setCreating(false);
     }
   };
-
-  useEffect(() => {
-    fetchTrucks();
-  }, []);
 
   return (
     <div style={{ padding: 20 }}>
@@ -134,13 +156,40 @@ export default function Truck() {
               />
             </Grid>
             <Grid item xs={12}>
+              <TextField
+                select
+                name="driver_id"
+                label="Select Driver"
+                value={newTruck.driver_id}
+                onChange={handleNewTruckChange}
+                fullWidth
+              >
+                <MenuItem value="">Select Driver</MenuItem>
+                {drivers.map((driver) => (
+                  <MenuItem key={driver.u_id} value={driver.u_id}>
+                    {driver.u_name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                name="t_capacity"
+                label="Capacity (tons)"
+                type="number"
+                value={newTruck.t_capacity}
+                onChange={handleNewTruckChange}
+                fullWidth
+                inputProps={{ min: 0 }}
+              />
+            </Grid>
+            <Grid item xs={12}>
               <Button
                 variant="contained"
                 color="primary"
                 onClick={handleCreateTruck}
                 disabled={creating}
                 fullWidth
-                style={{ padding: 10 }}
               >
                 {creating ? "Creating..." : "Create Truck"}
               </Button>
@@ -161,6 +210,8 @@ export default function Truck() {
               <TableRow>
                 <TableCell>ID</TableCell>
                 <TableCell>Plate</TableCell>
+                <TableCell>Driver</TableCell>
+                <TableCell>Capacity (tons)</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -169,6 +220,8 @@ export default function Truck() {
                 <TableRow key={truck.t_id}>
                   <TableCell>{truck.t_id}</TableCell>
                   <TableCell>{truck.t_plate}</TableCell>
+                  <TableCell>{truck.driver_name || "Unknown"}</TableCell>
+                  <TableCell>{truck.t_capacity || "-"}</TableCell>
                   <TableCell>
                     <Button color="primary" onClick={() => handleEdit(truck)}>
                       Edit
@@ -187,18 +240,47 @@ export default function Truck() {
         </TableContainer>
       )}
 
+      {/* Edit Dialog */}
       <Dialog open={openDialog} onClose={handleDialogClose}>
         <DialogTitle>Edit Truck</DialogTitle>
         <DialogContent>
           {editingTruck && (
-            <TextField
-              name="t_plate"
-              label="Plate Number"
-              value={editingTruck.t_plate}
-              onChange={handleChange}
-              fullWidth
-              margin="dense"
-            />
+            <>
+              <TextField
+                name="t_plate"
+                label="Plate Number"
+                value={editingTruck.t_plate}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+              />
+              <TextField
+                select
+                name="driver_id"
+                label="Select Driver"
+                value={editingTruck.driver_id}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+              >
+                <MenuItem value="">Select Driver</MenuItem>
+                {drivers.map((driver) => (
+                  <MenuItem key={driver.u_id} value={driver.u_id}>
+                    {driver.u_name}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                name="t_capacity"
+                label="Capacity (tons)"
+                type="number"
+                value={editingTruck.t_capacity}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+                inputProps={{ min: 0 }}
+              />
+            </>
           )}
         </DialogContent>
         <DialogActions>

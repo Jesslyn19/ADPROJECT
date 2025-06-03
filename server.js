@@ -242,25 +242,39 @@ app.delete("/api/smartbins/:id", async (req, res) => {
 });
 
 // ===============================
-// 🚛 Truck Routes
+// 🚛 Truck Routes with Driver from tb_user where role_id = 2
 // ===============================
-// GET all trucks
+
+// GET all trucks with driver names (from tb_user with role_id=2)
 app.get("/api/trucks", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute(
-      "SELECT t_id, t_plate, t_dname FROM tb_truck ORDER BY t_id ASC"
-    );
+    const [rows] = await connection.execute(`
+      SELECT 
+        t.t_id, 
+        t.t_plate, 
+        t.t_capacity, 
+        u.u_id AS driver_id, 
+        u.u_name AS driver_name
+      FROM tb_truck t
+      LEFT JOIN tb_user u ON t.driver_id = u.u_id AND u.role_id = 2
+      ORDER BY t.t_id ASC
+    `);
     await connection.end();
+
+    console.log("Fetched trucks:", rows);
     res.json(rows);
   } catch (error) {
+    console.error("Error fetching trucks:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// CREATE a new truck (t_id is auto-incremented)
+// ===============================
+// CREATE a new truck with optional driver_id (mapped to t.driver_id)
+// ===============================
 app.post("/api/trucks", async (req, res) => {
-  const { t_plate } = req.body;
+  const { t_plate, t_capacity, driver_id } = req.body;
 
   if (!t_plate) {
     return res.status(400).json({ error: "t_plate is required" });
@@ -269,8 +283,8 @@ app.post("/api/trucks", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [result] = await connection.execute(
-      `INSERT INTO tb_truck (t_plate) VALUES (?)`,
-      [t_plate]
+      `INSERT INTO tb_truck (t_plate, t_capacity, driver_id) VALUES (?, ?, ?)`,
+      [t_plate, t_capacity || null, driver_id || null]
     );
     await connection.end();
 
@@ -279,13 +293,17 @@ app.post("/api/trucks", async (req, res) => {
       truckId: result.insertId,
     });
   } catch (error) {
+    console.error("Error creating truck:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// UPDATE a truck
+// ===============================
+// UPDATE a truck including driver assignment
+// ===============================
 app.put("/api/trucks/:id", async (req, res) => {
-  const { t_plate } = req.body;
+  const { t_plate, t_capacity, driver_id } = req.body;
+  console.log("Request body:", req.body);
 
   if (!t_plate) {
     return res.status(400).json({ error: "t_plate is required" });
@@ -293,29 +311,64 @@ app.put("/api/trucks/:id", async (req, res) => {
 
   try {
     const connection = await mysql.createConnection(dbConfig);
-    await connection.execute(`UPDATE tb_truck SET t_plate = ? WHERE t_id = ?`, [
-      t_plate,
-      req.params.id,
-    ]);
+    const [result] = await connection.execute(
+      `UPDATE tb_truck 
+       SET t_plate = ?, t_capacity = ?, driver_id = ?
+       WHERE t_id = ?`,
+      [t_plate, t_capacity || null, driver_id || null, req.params.id]
+    );
     await connection.end();
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Truck not found" });
+    }
 
     res.json({ message: "Truck updated successfully" });
   } catch (error) {
+    console.error("Error updating truck:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
+// ===============================
 // DELETE a truck
+// ===============================
 app.delete("/api/trucks/:id", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    await connection.execute("DELETE FROM tb_truck WHERE t_id = ?", [
-      req.params.id,
-    ]);
+    const [result] = await connection.execute(
+      "DELETE FROM tb_truck WHERE t_id = ?",
+      [req.params.id]
+    );
     await connection.end();
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Truck not found" });
+    }
 
     res.json({ message: "Truck deleted successfully" });
   } catch (error) {
+    console.error("Error deleting truck:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===============================
+// GET all drivers (users with role_id=2)
+// ===============================
+app.get("/api/drivers", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      "SELECT u_id, u_name FROM tb_user WHERE role_id = ? ORDER BY u_name ASC",
+      [2]
+    );
+    await connection.end();
+
+    console.log("Fetched drivers:", rows);
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching drivers:", error);
     res.status(500).json({ error: error.message });
   }
 });
