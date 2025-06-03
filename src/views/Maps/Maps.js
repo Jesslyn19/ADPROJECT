@@ -6,6 +6,8 @@ import {
   Polyline,
 } from "@react-google-maps/api";
 import axios from "axios";
+import truckblue from "assets/img/truck-blue.png";
+import truckgreen from "assets/img/truck-green.png";
 
 // Constants
 const MAP_CONTAINER_STYLE = {
@@ -13,17 +15,17 @@ const MAP_CONTAINER_STYLE = {
   height: "600px",
 };
 
+const TRUCK_ICONS = {
+  blue: truckblue,
+  orange: truckgreen,
+};
+
 const DEPOT_LOCATION = { lat: 1.4234, lng: 103.6312 };
 const DEFAULT_ZOOM = 13;
 
-const TRUCK_ICONS = {
-  blue: "assets/img/truck-blue.png",
-  orange: "assets/img/truck-orange.png",
-};
-
 const BIN_ICONS = {
-  active: "http://maps.google.com/mapfiles/ms/icons/green-dot.png", // Example: green dot
-  inactive: "http://maps.google.com/mapfiles/ms/icons/red-dot.png", // Example: red dot
+  active: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+  inactive: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
 };
 
 const Maps = () => {
@@ -121,7 +123,7 @@ const Maps = () => {
       directionsService.current.route(
         {
           origin: DEPOT_LOCATION,
-          destination: truck.bins[truck.bins.length - 1], // Last bin as destination
+          destination: truck.bins[truck.bins.length - 1],
           waypoints,
           travelMode: window.google.maps.TravelMode.DRIVING,
           optimizeWaypoints: false,
@@ -148,9 +150,7 @@ const Maps = () => {
   const onGoogleApiLoad = useCallback(() => {
     if (window.google) {
       directionsService.current = new window.google.maps.DirectionsService();
-      setIsApiLoaded(true); // Set API loaded to true
-      // Call calculateRoutes here as well to ensure routes are calculated once API is ready
-      // This helps with initial load in case data fetches faster than API loads.
+      setIsApiLoaded(true);
       calculateRoutes();
     }
   }, [calculateRoutes]);
@@ -233,9 +233,7 @@ const Maps = () => {
     <LoadScript
       googleMapsApiKey={"AIzaSyD227H6VuZdZE7RNLjFnq2YWAjfMlNf_z0"}
       onLoad={onGoogleApiLoad} // Call onGoogleApiLoad when the script is loaded
-      libraries={["geometry", "places"]} // Add any other libraries you might need, e.g., 'places'
-      // To use AdvancedMarkerElement, you would need to add 'marker' to libraries:
-      // libraries={['geometry', 'places', 'marker']}
+      libraries={["geometry", "places", "marker"]}
     >
       <div className="map-controls">
         <label htmlFor="truck-select">
@@ -278,7 +276,7 @@ const Maps = () => {
         {filteredTrucks.map((truck) => (
           <React.Fragment key={truck.t_id}>
             {/* Truck Marker */}
-            {isApiLoaded && ( // Conditionally render markers only when API is loaded
+            {isApiLoaded && (
               <Marker
                 position={positions[truck.t_id] || DEPOT_LOCATION}
                 title={`Truck: ${truck.t_plate}\nDriver: ${truck.driverName}`}
