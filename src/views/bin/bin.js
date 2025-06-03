@@ -3,6 +3,7 @@ import axios from "axios";
 import {
   Button,
   Table,
+  Box,
   TableBody,
   TableCell,
   TableContainer,
@@ -135,7 +136,7 @@ export default function Bin() {
   }, []);
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 8 }}>
       <Button
         variant="contained"
         color="primary"
@@ -237,50 +238,50 @@ export default function Bin() {
         <CircularProgress />
       ) : (
         <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Plate Number</TableCell>
-                <TableCell>Latitude</TableCell>
-                <TableCell>Longitude</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Customer</TableCell>
-                <TableCell>Truck Plate</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {bins.map((bin, index) => (
-                <TableRow key={bin.sb_id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{bin.sb_plate}</TableCell>
-                  <TableCell>{bin.sb_latitude}</TableCell>
-                  <TableCell>{bin.sb_longitude}</TableCell>
-                  <TableCell>{bin.sb_status}</TableCell>
-                  <TableCell>
-                    {customers.find((c) => c.c_id === bin.c_id)?.c_name ||
-                      "Unknown"}
-                  </TableCell>
-                  <TableCell>
-                    {trucks.find((t) => t.t_id === bin.t_id)?.t_plate ||
-                      "Unknown"}
-                  </TableCell>
-                  <TableCell>
-                    <Button color="primary" onClick={() => handleEdit(bin)}>
-                      Edit
-                    </Button>
-                    <Button
-                      color="secondary"
-                      onClick={() => handleDelete(bin.sb_id)}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
+          <Box sx={{ maxHeight: "60vh", overflow: "auto" }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Plate Number</TableCell>
+                  <TableCell>Latitude</TableCell>
+                  <TableCell>Longitude</TableCell>
+                  <TableCell>Customer</TableCell>
+                  <TableCell>Truck Plate</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {bins.map((bin, index) => (
+                  <TableRow key={bin.sb_id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{bin.sb_plate}</TableCell>
+                    <TableCell>{bin.sb_latitude}</TableCell>
+                    <TableCell>{bin.sb_longitude}</TableCell>
+                    <TableCell>
+                      {customers.find((c) => c.c_id === bin.c_id)?.c_name ||
+                        "Unknown"}
+                    </TableCell>
+                    <TableCell>
+                      {trucks.find((t) => t.t_id === bin.t_id)?.t_plate ||
+                        "Unknown"}
+                    </TableCell>
+                    <TableCell>
+                      <Button color="primary" onClick={() => handleEdit(bin)}>
+                        Edit
+                      </Button>
+                      <Button
+                        color="secondary"
+                        onClick={() => handleDelete(bin.sb_id)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
         </TableContainer>
       )}
 

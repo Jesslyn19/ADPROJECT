@@ -1,18 +1,19 @@
-﻿import React from "react";
+﻿import React, { useEffect, useState } from "react";
+import axios from "axios";
 // react plugin for creating charts
 //import ChartistGraph from "react-chartist";
 // @material-ui/core
 import { makeStyles } from "@material-ui/core/styles";
 import Icon from "@material-ui/core/Icon";
 // @material-ui/icons
-import Store from "@material-ui/icons/Store";
-import Warning from "@material-ui/icons/Warning";
-import DateRange from "@material-ui/icons/DateRange";
-import LocalOffer from "@material-ui/icons/LocalOffer";
-import Update from "@material-ui/icons/Update";
+//import Store from "@material-ui/icons/Store";
+//import Warning from "@material-ui/icons/Warning";
+//import DateRange from "@material-ui/icons/DateRange";
+//import LocalOffer from "@material-ui/icons/LocalOffer";
+//import Update from "@material-ui/icons/Update";
 //import ArrowUpward from "@material-ui/icons/ArrowUpward";
 //import AccessTime from "@material-ui/icons/AccessTime";
-import Accessibility from "@material-ui/icons/Accessibility";
+//import Accessibility from "@material-ui/icons/Accessibility";
 import BugReport from "@material-ui/icons/BugReport";
 import Code from "@material-ui/icons/Code";
 import Cloud from "@material-ui/icons/Cloud";
@@ -22,7 +23,7 @@ import GridContainer from "components/Grid/GridContainer.js";
 import Table from "components/Table/Table.js";
 import Tasks from "components/Tasks/Tasks.js";
 import CustomTabs from "components/CustomTabs/CustomTabs.js";
-import Danger from "components/Typography/Danger.js";
+//import Danger from "components/Typography/Danger.js";
 import Card from "components/Card/Card.js";
 import CardHeader from "components/Card/CardHeader.js";
 import CardIcon from "components/Card/CardIcon.js";
@@ -45,6 +46,89 @@ const useStyles = makeStyles(styles);
 
 export default function Dashboard() {
   const classes = useStyles();
+  const [totalBins, setTotalBins] = useState(0);
+  const [totalCollectedBins, setTotalCollectedBins] = useState(0);
+  const [totalMissedBins, setTotalMissedBins] = useState(0);
+  const [totalCustomers, setTotalCustomers] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState(Date.now());
+  const [timeAgo, setTimeAgo] = useState("just now");
+
+  useEffect(() => {
+    const fetchTotalBins = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/total-bins"
+        );
+        setTotalBins(response.data.total);
+        setLastUpdated(Date.now());
+      } catch (error) {
+        console.error("Failed to fetch total bins:", error);
+      }
+    };
+    fetchTotalBins();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalCollectedBins = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/collected-bins"
+        );
+        setTotalCollectedBins(response.data.total);
+        setLastUpdated(Date.now());
+      } catch (error) {
+        console.error("Failed to fetch total collected bins:", error);
+      }
+    };
+    fetchTotalCollectedBins();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalMissedBins = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/missed-bins"
+        );
+        setTotalMissedBins(response.data.total);
+        setLastUpdated(Date.now());
+      } catch (error) {
+        console.error("Failed to fetch total missed bins:", error);
+      }
+    };
+    fetchTotalMissedBins();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalCustomers = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/total-customers"
+        );
+        setTotalCustomers(response.data.total);
+        setLastUpdated(Date.now());
+      } catch (error) {
+        console.error("Failed to fetch total customers:", error);
+      }
+    };
+    fetchTotalCustomers();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const diff = Math.floor((Date.now() - lastUpdated) / 1000);
+      if (diff < 60)
+        setTimeAgo(`Last updated: ${diff} sec${diff !== 1 ? "s" : ""} ago`);
+      else if (diff < 3600)
+        setTimeAgo(`Last updated: ${Math.floor(diff / 60)} min ago`);
+      else
+        setTimeAgo(
+          `Last updated: ${new Date(lastUpdated).toLocaleTimeString()}`
+        );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lastUpdated]);
+
   return (
     <div>
       <GridContainer>
@@ -52,21 +136,17 @@ export default function Dashboard() {
           <Card>
             <CardHeader color="warning" stats icon>
               <CardIcon color="warning">
-                <Icon>content_copy</Icon>
+                <Icon>delete</Icon>
               </CardIcon>
               <p className={classes.cardCategory}>Total Bins</p>
               <h3 className={classes.cardTitle}>
-                49/50 <small>GB</small>
+                {totalBins} <small>bins</small>
               </h3>
             </CardHeader>
             <CardFooter stats>
               <div className={classes.stats}>
-                <Danger>
-                  <Warning />
-                </Danger>
-                <a href="#pablo" onClick={(e) => e.preventDefault()}>
-                  Get more space
-                </a>
+                <Icon>access_time</Icon>
+                {timeAgo}
               </div>
             </CardFooter>
           </Card>
@@ -75,15 +155,17 @@ export default function Dashboard() {
           <Card>
             <CardHeader color="success" stats icon>
               <CardIcon color="success">
-                <Store />
+                <Icon>check_circle</Icon>
               </CardIcon>
               <p className={classes.cardCategory}>Total Collected</p>
-              <h3 className={classes.cardTitle}>$34,245</h3>
+              <h3 className={classes.cardTitle}>
+                {totalCollectedBins}/{totalBins} <small>bins</small>
+              </h3>
             </CardHeader>
             <CardFooter stats>
               <div className={classes.stats}>
-                <DateRange />
-                Last 24 Hours
+                <Icon>access_time</Icon>
+                {timeAgo}
               </div>
             </CardFooter>
           </Card>
@@ -92,15 +174,17 @@ export default function Dashboard() {
           <Card>
             <CardHeader color="danger" stats icon>
               <CardIcon color="danger">
-                <Icon>info_outline</Icon>
+                <Icon>delete_forever</Icon>
               </CardIcon>
               <p className={classes.cardCategory}>Total Missed</p>
-              <h3 className={classes.cardTitle}>75</h3>
+              <h3 className={classes.cardTitle}>
+                {totalMissedBins}/{totalBins} <small>bins</small>
+              </h3>
             </CardHeader>
             <CardFooter stats>
               <div className={classes.stats}>
-                <LocalOffer />
-                Tracked from Github
+                <Icon>access_time</Icon>
+                {timeAgo}
               </div>
             </CardFooter>
           </Card>
@@ -109,15 +193,15 @@ export default function Dashboard() {
           <Card>
             <CardHeader color="info" stats icon>
               <CardIcon color="info">
-                <Accessibility />
+                <Icon>people</Icon>
               </CardIcon>
               <p className={classes.cardCategory}>Total Customers</p>
-              <h3 className={classes.cardTitle}>+245</h3>
+              <h3 className={classes.cardTitle}>{totalCustomers}</h3>
             </CardHeader>
             <CardFooter stats>
               <div className={classes.stats}>
-                <Update />
-                Just Updated
+                <Icon>access_time</Icon>
+                {timeAgo}
               </div>
             </CardFooter>
           </Card>

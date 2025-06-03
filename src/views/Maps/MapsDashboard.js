@@ -209,7 +209,15 @@ const MapComponent = () => {
   return (
     <div>
       <LoadScript googleMapsApiKey="AIzaSyCHoSifBUCDcoEiDXM0UHYM1iXQ09gUukg">
-        <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={14}>
+        <GoogleMap
+          mapContainerStyle={containerStyle}
+          center={center}
+          zoom={14}
+          options={{
+            gestureHandling: "cooperative", // or 'cooperative'
+            scrollwheel: false, // allow zooming via scroll
+          }}
+        >
           <div style={{ position: "absolute", top: 20, right: 60, zIndex: 10 }}>
             <button onClick={handlePlay} style={{ marginRight: "10px" }}>
               ▶ Play

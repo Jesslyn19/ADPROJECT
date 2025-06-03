@@ -23,6 +23,8 @@ import LibraryBooks from "@material-ui/icons/LibraryBooks";
 import LocationOn from "@material-ui/icons/LocationOn";
 //import Notifications from "@material-ui/icons/Notifications";
 import ImageIcon from "@material-ui/icons/Image";
+import AssignmentLate from "@material-ui/icons/AssignmentLate";
+import CreateIcon from "@material-ui/icons/Create";
 import Image from "views/Image/Image.js";
 import Customer from "views/customer/customer.js";
 import Truck from "views/truck/truck.js";
@@ -34,6 +36,8 @@ import Bin from "views/bin/bin.js";
 //import Icons from "views/Icons/Icons.js";
 import Maps from "views/Maps/Maps.js";
 import Task from "views/Task/Task.js";
+import Report from "views/report/report.js";
+import createReport from "views/report/create_report.js";
 //import NotificationsPage from "views/Notifications/Notifications.js";
 
 const dashboardRoutes = [
@@ -92,6 +96,20 @@ const dashboardRoutes = [
     name: "Image",
     icon: ImageIcon,
     component: Image,
+    layout: "/admin",
+  },
+  {
+    path: "/report",
+    name: "Report",
+    icon: AssignmentLate,
+    component: Report,
+    layout: "/admin",
+  },
+  {
+    path: "/create_report",
+    name: "Write Report",
+    icon: CreateIcon,
+    component: createReport,
     layout: "/admin",
   },
   //{

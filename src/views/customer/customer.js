@@ -3,6 +3,7 @@ import axios from "axios";
 import {
   Button,
   Table,
+  Box,
   TableBody,
   TableCell,
   TableContainer,
@@ -120,7 +121,7 @@ export default function Customer() {
   }, []);
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 8 }}>
       <Button
         variant="contained"
         color="primary"
@@ -213,47 +214,49 @@ export default function Customer() {
         <CircularProgress />
       ) : (
         <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Street</TableCell>
-                <TableCell>Postcode</TableCell>
-                <TableCell>City</TableCell>
-                <TableCell>State</TableCell>
-                <TableCell>Country</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {customers.map((customer) => (
-                <TableRow key={customer.c_id}>
-                  <TableCell>{customer.c_id}</TableCell>
-                  <TableCell>{customer.c_name}</TableCell>
-                  <TableCell>{customer.c_street}</TableCell>
-                  <TableCell>{customer.c_postcode}</TableCell>
-                  <TableCell>{customer.c_city}</TableCell>
-                  <TableCell>{customer.c_state}</TableCell>
-                  <TableCell>{customer.c_country}</TableCell>
-                  <TableCell>
-                    <Button
-                      color="primary"
-                      onClick={() => handleEdit(customer)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      color="secondary"
-                      onClick={() => handleDelete(customer.c_id)}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
+          <Box sx={{ maxHeight: "60vh", overflow: "auto" }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Street</TableCell>
+                  <TableCell>Postcode</TableCell>
+                  <TableCell>City</TableCell>
+                  <TableCell>State</TableCell>
+                  <TableCell>Country</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {customers.map((customer, index) => (
+                  <TableRow key={customer.c_id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{customer.c_name}</TableCell>
+                    <TableCell>{customer.c_street}</TableCell>
+                    <TableCell>{customer.c_postcode}</TableCell>
+                    <TableCell>{customer.c_city}</TableCell>
+                    <TableCell>{customer.c_state}</TableCell>
+                    <TableCell>{customer.c_country}</TableCell>
+                    <TableCell>
+                      <Button
+                        color="primary"
+                        onClick={() => handleEdit(customer)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        color="secondary"
+                        onClick={() => handleDelete(customer.c_id)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
         </TableContainer>
       )}
 

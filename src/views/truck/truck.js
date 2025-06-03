@@ -3,6 +3,7 @@ import axios from "axios";
 import {
   Button,
   Table,
+  Box,
   TableBody,
   TableCell,
   TableContainer,
@@ -130,7 +131,7 @@ export default function Truck() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 8 }}>
       <Button
         variant="contained"
         color="primary"
@@ -205,38 +206,40 @@ export default function Truck() {
         <CircularProgress />
       ) : (
         <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Plate</TableCell>
-                <TableCell>Driver</TableCell>
-                <TableCell>Capacity (tons)</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {trucks.map((truck) => (
-                <TableRow key={truck.t_id}>
-                  <TableCell>{truck.t_id}</TableCell>
-                  <TableCell>{truck.t_plate}</TableCell>
-                  <TableCell>{truck.driver_name || "Unknown"}</TableCell>
-                  <TableCell>{truck.t_capacity || "-"}</TableCell>
-                  <TableCell>
-                    <Button color="primary" onClick={() => handleEdit(truck)}>
-                      Edit
-                    </Button>
-                    <Button
-                      color="secondary"
-                      onClick={() => handleDelete(truck.t_id)}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
+          <Box sx={{ maxHeight: "60vh", overflow: "auto" }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Plate</TableCell>
+                  <TableCell>Driver</TableCell>
+                  <TableCell>Capacity (tons)</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {trucks.map((truck, index) => (
+                  <TableRow key={truck.t_id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{truck.t_plate}</TableCell>
+                    <TableCell>{truck.driver_name || "Unknown"}</TableCell>
+                    <TableCell>{truck.t_capacity || "-"}</TableCell>
+                    <TableCell>
+                      <Button color="primary" onClick={() => handleEdit(truck)}>
+                        Edit
+                      </Button>
+                      <Button
+                        color="secondary"
+                        onClick={() => handleDelete(truck.t_id)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
         </TableContainer>
       )}
 

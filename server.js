@@ -1,6 +1,8 @@
 ﻿const express = require("express");
 const mysql = require("mysql2/promise");
 const path = require("path");
+const multer = require("multer");
+const bodyParser = require("body-parser");
 const cors = require("cors");
 const { exec } = require("child_process");
 
@@ -10,6 +12,8 @@ const PORT = 5000;
 // Enable CORS and JSON body parsing
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // DB Config
 const dbConfig = {
@@ -197,6 +201,8 @@ app.delete("/api/customers/:id", async (req, res) => {
   }
 });
 
+//-----------------------------------------------------------------------
+// Bins section
 app.get("/api/smartbins", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
@@ -267,6 +273,124 @@ app.delete("/api/smartbins/:id", async (req, res) => {
     ]);
     await connection.end();
     res.json({ message: "Bin deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//get total bins
+app.get("/api/total-bins", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      "SELECT COUNT(*) AS total FROM tb_smartbin"
+    );
+    await connection.end();
+
+    res.json({ total: rows[0].total });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//get total collected bins
+app.get("/api/collected-bins", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      "SELECT COUNT(*) AS total FROM tb_smartbin WHERE sb_status='Collected'"
+    );
+    await connection.end();
+
+    res.json({ total: rows[0].total });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//get total missed bins
+app.get("/api/missed-bins", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      "SELECT COUNT(*) AS total FROM tb_smartbin WHERE sb_status='Missed'"
+    );
+    await connection.end();
+
+    res.json({ total: rows[0].total });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//get total customer
+app.get("/api/total-customers", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      "SELECT COUNT(*) AS total FROM tb_customer"
+    );
+    await connection.end();
+
+    res.json({ total: rows[0].total });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//-----------------------------------------------------------------------
+// Reports section
+// Multer setup
+const storage = multer.diskStorage({
+  destination: "./uploads/",
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + file.originalname;
+    cb(null, uniqueName);
+  },
+});
+const upload = multer({ storage: storage });
+
+// Create new report
+app.post("/api/create_report", upload.single("image"), async (req, res) => {
+  const { writer, subject, content } = req.body;
+  const image = req.file
+    ? `http://localhost:3001/uploads/${req.file.filename}`
+    : null;
+
+  const connection = await mysql.createConnection(dbConfig);
+  const sql = `INSERT INTO tb_report (r_subject, r_content, r_image, r_writer, r_datetime)
+               VALUES (?, ?, ?, ?, NOW())`;
+
+  connection.query(sql, [subject, content, image, writer], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.status(200).json({ message: "Report submitted successfully." });
+  });
+});
+
+// delete a report
+app.delete("/api/reports/:id", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    await connection.execute("DELETE FROM tb_report WHERE r_id = ?", [
+      req.params.id,
+    ]);
+    await connection.end();
+    res.json({ message: "Report deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// view reports
+app.get("/api/reports", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      "SELECT r_id, r_subject, r_content, r_image, r_writer, r_datetime FROM tb_report"
+    );
+    await connection.end();
+
+    res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

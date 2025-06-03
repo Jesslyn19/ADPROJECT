@@ -7,3 +7,17 @@ To solve Error: error:0308010C:digital envelope routines::unsupported
 1. $env:NODE_OPTIONS="--openssl-legacy-provider"
 2. npm run start:legacy
 
+To solve google problem
+1. pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+
+To solve ultralytics problem
+1. pip install ultralytics
+
+To solve easyocr
+1. pip install easyocr
+
+To solve mysql problem
+1.pip install mysql-connector-python
+
+To solve multer problem
+1. npm install express mysql multer cors body-parser
