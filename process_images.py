@@ -42,47 +42,6 @@ def initialize_drive_service():
         print(f"❌ Google Drive initialization error: {e}")
         return None
 
-# def download_new_image(drive_service):
-#     """Download the newest image from Google Drive."""
-#     try:
-#         results = drive_service.files().list(
-#             q=f"'{FOLDER_ID}' in parents and mimeType contains 'image/'",
-#             orderBy="createdTime desc",
-#             fields="files(id, name, createdTime)",
-#             pageSize=1
-#         ).execute()
-        
-#         if not results.get('files'):
-#             return None
-            
-#         file = results['files'][0]
-        
-#         # Validate filename format
-#         if not re.match(r"IMG_\d{8}_\d{6}\.png", file['name']):
-#             print(f"⚠️ Skipping {file['name']} - Invalid filename format")
-#             return None
-        
-#         # Create downloads directory if it doesn't exist
-#         os.makedirs('downloads', exist_ok=True)
-#         file_path = os.path.join('downloads', file['name'])
-        
-#         # Download the file
-#         request = drive_service.files().get_media(fileId=file['id'])
-#         with open(file_path, 'wb') as f:
-#             downloader = MediaIoBaseDownload(f, request)
-#             done = False
-#             while not done:
-#                 _, done = downloader.next_chunk()
-        
-#         return {
-#             'id': file['id'],
-#             'name': file['name'],
-#             'path': file_path
-#         }
-#     except Exception as e:
-#         print(f"❌ Download error: {e}")
-#         return None
-
 def get_all_unprocessed_images(drive_service, conn):
     """Get all images from Drive that haven't been processed yet."""
     try:
