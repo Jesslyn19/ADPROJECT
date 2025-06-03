@@ -77,6 +77,37 @@ app.put('/api/images/:id', async (req, res) => {
   }
 });
 
+app.get("/api/tasks", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+
+    const [rows] = await connection.execute(`
+      SELECT 
+        s.sb_id,
+        s.sb_plate,
+        i.i_url,
+        i.i_time
+      FROM tb_smartbin s
+      LEFT JOIN tb_image i 
+        ON s.sb_id = i.sb_id 
+        AND i.i_date = CURDATE()
+      ORDER BY s.sb_id ASC
+    `);
+
+    await connection.end();
+
+    const enrichedRows = rows.map((row) => ({
+      ...row,
+      status: row.i_url ? "Done" : "Missed",
+    }));
+
+    res.json(enrichedRows);
+  } catch (error) {
+    console.error("Error fetching merged smartbin/image data:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ===============================
 // 👤 Customer Routes
 // ===============================
