@@ -5,276 +5,260 @@ import {
   Marker,
   Polyline,
 } from "@react-google-maps/api";
-import PropTypes from "prop-types";
 import axios from "axios";
-import driver from "assets/img/driver.png";
-import truck from "assets/img/delivery-truck.png";
+
+const containerStyle = {
+  width: "100%",
+  height: "600px",
+};
+
+const depot = { lat: 1.4234, lng: 103.6312 };
+
+const truckBlueIconUrl = "assets/img/truck-blue.png";
+const truckOrangeIconUrl = "assets/img/truck-orange.png";
 
 const Maps = () => {
-  const depot = { lat: 1.4234, lng: 103.6312 };
   const [map, setMap] = useState(null);
   const [trucks, setTrucks] = useState([]);
-  const [isPaused, setIsPaused] = useState(false);
-  const intervalRefs = useRef([]);
-  const [selectedTruck, setSelectedTruck] = useState("all");
-  const [center, setCenter] = useState(depot);
+  const [selectedTruckId, setSelectedTruckId] = useState("all");
+  const [routes, setRoutes] = useState({}); // { truckId: [LatLng] }
+  const [positions, setPositions] = useState({}); // current truck positions on route
+  const [isPlaying, setIsPlaying] = useState(false);
+  const intervalRefs = useRef({});
+  const directionsService = useRef(null);
 
-  const truckInfo =
-    selectedTruck !== "all" ? trucks.find((t) => t.id === selectedTruck) : null;
-
-  const onLoad = (mapInstance) => setMap(mapInstance);
-
+  // Load trucks, bins, and users
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [truckRes, binRes] = await Promise.all([
+        const [truckRes, binRes, userRes] = await Promise.all([
           axios.get("http://localhost:5000/api/trucks"),
           axios.get("http://localhost:5000/api/smartbins"),
+          axios.get("http://localhost:5000/api/users"),
         ]);
 
-        const trucksWithBins = truckRes.data.map((truck) => {
+        const users = userRes.data;
+
+        // Join trucks to drivers and assign bins
+        const trucksWithData = truckRes.data.map((truck) => {
+          const driver = users.find((u) => u.u_id === truck.driver_id);
           const bins = binRes.data
             .filter((bin) => bin.t_id === truck.t_id)
             .map((bin) => ({
               ...bin,
-              lat: bin.sb_latitude,
-              lng: bin.sb_longitude,
+              lat: Number(bin.sb_latitude),
+              lng: Number(bin.sb_longitude),
             }));
-
           return {
-            id: `truck${truck.t_id}`,
+            ...truck,
+            driverName: driver ? driver.u_name : "No Driver",
             bins,
-            path: [depot, ...bins],
-            position: bins.length > 0 ? bins[0] : null,
-            step: 0,
-            color: truck.t_id === 1 ? "#6a93b4" : "#FFC985",
-            driver: truck.t_dname,
-            plate: truck.t_plate,
           };
         });
 
-        setTrucks(trucksWithBins);
-      } catch (err) {
-        console.error("Fetch error:", err);
+        setTrucks(trucksWithData);
+      } catch (error) {
+        console.error("Fetch error", error);
       }
     };
 
     fetchData();
   }, []);
 
+  // Calculate routes whenever trucks or selection change
   useEffect(() => {
-    if (map) {
-      setTimeout(() => {
-        window.google.maps.event.trigger(map, "resize");
-      }, 500); // delay ensures tab is visible
+    if (!map) return;
+    if (!directionsService.current) {
+      directionsService.current = new window.google.maps.DirectionsService();
     }
-  }, [map]);
 
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && map) {
-        window.google.maps.event.trigger(map, "resize");
+    const trucksToRoute =
+      selectedTruckId === "all"
+        ? trucks
+        : trucks.filter((t) => t.t_id === Number(selectedTruckId));
+
+    trucksToRoute.forEach((truck) => {
+      if (truck.bins.length === 0) {
+        setRoutes((prev) => ({ ...prev, [truck.t_id]: [] }));
+        return;
       }
-    };
+      const waypoints = truck.bins.slice(1).map((bin) => ({
+        location: { lat: bin.lat, lng: bin.lng },
+        stopover: true,
+      }));
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [map]);
-
-  //Simulate Movement
-  useEffect(() => {
-    intervalRefs.current.forEach(clearInterval);
-    intervalRefs.current = [];
-
-    if (isPaused || trucks.length === 0) return;
-
-    const newIntervals = trucks.map((truck) => {
-      let step = 0;
-      let pause = false;
-
-      return setInterval(() => {
-        if (pause || isPaused || !truck.path) return;
-
-        const path = truck.path;
-        if (step >= path.length) return;
-
-        const point = path[step];
-
-        const nearBin = truck.bins.find((bin) => {
-          const dist = Math.sqrt(
-            Math.pow(bin.lat - point.lat, 2) + Math.pow(bin.lng - point.lng, 2)
-          );
-          return dist < 0.0005;
-        });
-
-        if (nearBin) {
-          pause = true;
-          setTimeout(() => {
-            pause = false;
-          }, 2000);
+      directionsService.current.route(
+        {
+          origin: depot,
+          destination: truck.bins[truck.bins.length - 1],
+          waypoints,
+          travelMode: window.google.maps.TravelMode.DRIVING,
+          optimizeWaypoints: false,
+        },
+        (result, status) => {
+          if (status === "OK" && result) {
+            const path = result.routes[0].overview_path.map((p) => ({
+              lat: p.lat(),
+              lng: p.lng(),
+            }));
+            setRoutes((prev) => ({ ...prev, [truck.t_id]: path }));
+          } else {
+            console.error("Directions error:", status);
+            setRoutes((prev) => ({ ...prev, [truck.t_id]: [] }));
+          }
         }
-
-        setTrucks((prev) =>
-          prev.map((t) =>
-            t.id === truck.id ? { ...t, position: point, step: step + 1 } : t
-          )
-        );
-
-        step++;
-      }, 100);
+      );
     });
+  }, [trucks, selectedTruckId, map]);
 
-    intervalRefs.current = newIntervals;
+  // Center map on selected truck's first bin or depot
+  const center =
+    selectedTruckId === "all"
+      ? depot
+      : trucks.find((t) => t.t_id === Number(selectedTruckId))?.bins[0] ||
+        depot;
 
-    return () => {
-      newIntervals.forEach(clearInterval);
-    };
-  }, [isPaused, trucks]);
+  // Animate truck movement
+  const startAnimation = () => {
+    if (isPlaying) return;
+    setIsPlaying(true);
+    const truckIds =
+      selectedTruckId === "all"
+        ? trucks.map((t) => t.t_id)
+        : [Number(selectedTruckId)];
 
-  useEffect(() => {
-    if (selectedTruck !== "all") {
-      const truck = trucks.find((t) => t.id === selectedTruck);
-      if (truck?.bins?.length >= 5) {
-        setCenter({ lat: truck.bins[6].lat, lng: truck.bins[6].lng });
-      }
-    } else {
-      setCenter(depot);
-    }
-  }, [selectedTruck, trucks]);
+    truckIds.forEach((truckId) => {
+      let step = 0;
+      clearInterval(intervalRefs.current[truckId]); // clear if exists
+      intervalRefs.current[truckId] = setInterval(() => {
+        setPositions((prev) => {
+          const path = routes[truckId];
+          if (!path || step >= path.length) {
+            clearInterval(intervalRefs.current[truckId]);
+            return prev;
+          }
+          const newPos = { ...prev, [truckId]: path[step] };
+          step++;
+          return newPos;
+        });
+      }, 200);
+    });
+  };
+
+  const pauseAnimation = () => {
+    setIsPlaying(false);
+    Object.values(intervalRefs.current).forEach(clearInterval);
+  };
+
+  const resetAnimation = () => {
+    setIsPlaying(false);
+    Object.values(intervalRefs.current).forEach(clearInterval);
+    // Reset positions to start of routes
+    setPositions((prev) => {
+      const newPos = { ...prev };
+      Object.keys(routes).forEach((truckId) => {
+        if (routes[truckId] && routes[truckId].length > 0) {
+          newPos[truckId] = routes[truckId][0];
+        } else {
+          newPos[truckId] = depot;
+        }
+      });
+      return newPos;
+    });
+  };
 
   return (
     <LoadScript googleMapsApiKey="AIzaSyD227H6VuZdZE7RNLjFnq2YWAjfMlNf_z0">
-      {/* HEADER: Filter + Pause Button + Truck Info */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "10px 20px",
-          backgroundColor: "#fff",
-          borderBottom: "1px solid #ddd",
-          zIndex: 10,
-        }}
-      >
-        {/* Left: Dropdown + Button */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <label>Filter by Truck:</label>
-          <select
-            value={selectedTruck}
-            onChange={(e) => setSelectedTruck(e.target.value)}
-            style={{
-              padding: "6px 10px",
-              fontSize: "14px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              background: "transparent",
-            }}
-          >
-            <option value="all">All Trucks</option>
-            {trucks.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.plate || t.id}
-              </option>
-            ))}
-          </select>
+      <div style={{ marginBottom: 10, padding: 10, backgroundColor: "#fff" }}>
+        <label htmlFor="truck-select" style={{ marginRight: 8 }}>
+          Select Truck:
+        </label>
+        <select
+          id="truck-select"
+          value={selectedTruckId}
+          onChange={(e) => setSelectedTruckId(e.target.value)}
+        >
+          <option value="all">All Trucks</option>
+          {trucks.map((truck) => (
+            <option key={truck.t_id} value={truck.t_id}>
+              {truck.t_plate} - {truck.driverName}
+            </option>
+          ))}
+        </select>
 
+        <div style={{ marginTop: 10 }}>
           <button
-            onClick={() => setIsPaused((prev) => !prev)}
-            style={{
-              backgroundColor: "#F0F0F0",
-              color: "black",
-              border: "2px solid green",
-              borderRadius: "4px",
-              padding: "8px 20px",
-              fontSize: "14px",
-              fontFamily: "Times New Roman, Times, serif",
-              cursor: "pointer",
-            }}
+            onClick={startAnimation}
+            disabled={isPlaying}
+            style={{ marginRight: 10 }}
           >
-            {isPaused ? "Resume Trucks" : "Pause Trucks"}
+            ▶ Start
           </button>
-        </div>
-
-        {/* Right: Truck Info */}
-        <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-          {truckInfo && (
-            <>
-              <span
-                style={{ display: "flex", alignItems: "center", gap: "4px" }}
-              >
-                <img src={driver} alt="Driver" width="20" title="Driver" />
-                {truckInfo.driver}
-              </span>
-              <span
-                style={{ display: "flex", alignItems: "center", gap: "4px" }}
-              >
-                <img src={truck} alt="Plate" width="20" title="Plate Number" />
-                {truckInfo.plate}
-              </span>
-            </>
-          )}
+          <button
+            onClick={pauseAnimation}
+            disabled={!isPlaying}
+            style={{ marginRight: 10 }}
+          >
+            ⏸ Pause
+          </button>
+          <button onClick={resetAnimation}>⏹ Reset</button>
         </div>
       </div>
 
-      {/* MAP */}
       <GoogleMap
-        mapContainerStyle={{ height: "600px", width: "100%" }}
+        mapContainerStyle={containerStyle}
         center={center}
         zoom={13}
-        onLoad={onLoad}
-        options={{ draggable: true }}
+        onLoad={(map) => setMap(map)}
+        options={{ streetViewControl: false }}
       >
-        {trucks
-          .filter((t) => selectedTruck === "all" || t.id === selectedTruck)
-          .map((truck) => (
-            <React.Fragment key={truck.id}>
-              {truck.position && (
-                <Marker
-                  position={truck.position}
-                  icon={{
-                    url:
-                      truck.id === "truck1"
-                        ? "truck-blue.png"
-                        : "truck-orange.png",
-                    scaledSize: new window.google.maps.Size(60, 40),
-                  }}
-                />
-              )}
-              {truck.path && (
-                <Polyline
-                  path={truck.path}
-                  options={{
-                    strokeColor: truck.color,
-                    strokeWeight: 6,
-                    strokeOpacity: 0.8,
-                  }}
-                />
-              )}
-            </React.Fragment>
-          ))}
+        {(selectedTruckId === "all"
+          ? trucks
+          : trucks.filter((t) => t.t_id === Number(selectedTruckId))
+        ).map((truck) => (
+          <React.Fragment key={truck.t_id}>
+            {/* Truck marker current position */}
+            <Marker
+              position={positions[truck.t_id] || depot}
+              title={`Truck: ${truck.t_plate} Driver: ${truck.driverName}`}
+              icon={{
+                url: truck.t_id === 1 ? truckBlueIconUrl : truckOrangeIconUrl,
+                scaledSize: new window.google.maps.Size(50, 30),
+              }}
+            />
 
-        {trucks
-          .filter((t) => selectedTruck === "all" || t.id === selectedTruck)
-          .flatMap((truck) =>
-            truck.bins.map((bin, index) => (
-              <Marker
-                key={`${truck.id}-bin-${index}`}
-                position={{ lat: bin.lat, lng: bin.lng }}
-                icon={{
-                  url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            {/* Route polyline */}
+            {routes[truck.t_id] && routes[truck.t_id].length > 0 && (
+              <Polyline
+                path={routes[truck.t_id]}
+                options={{
+                  strokeColor: truck.t_id === 1 ? "#3366FF" : "#FF9900",
+                  strokeWeight: 5,
+                  strokeOpacity: 0.7,
                 }}
               />
-            ))
-          )}
+            )}
+
+            {/* Bin markers */}
+            {truck.bins.map((bin) => (
+              <Marker
+                key={bin.sb_id}
+                position={{ lat: bin.lat, lng: bin.lng }}
+                title={`Bin: ${bin.sb_plate} (${bin.sb_status})`}
+                icon={{
+                  url:
+                    bin.sb_status === "Active"
+                      ? "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                      : "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+                  scaledSize: new window.google.maps.Size(32, 32),
+                }}
+              />
+            ))}
+          </React.Fragment>
+        ))}
       </GoogleMap>
     </LoadScript>
   );
 };
 
-Maps.propTypes = {
-  selectedTruck: PropTypes.string,
-};
 export default Maps;
