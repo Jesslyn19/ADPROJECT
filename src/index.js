@@ -42,9 +42,9 @@ ReactDOM.render(
       <ProtectedRoute
         path="/collector"
         component={Collector}
-        allowedRoles={[2]}
+        allowedRoles={[3]}
       />
-      <ProtectedRoute path="/driver" component={Driver} allowedRoles={[3]} />
+      <ProtectedRoute path="/driver" component={Driver} allowedRoles={[2]} />
 
       {/* Redirect any other route to login */}
       <Redirect from="/" to="/login" />
