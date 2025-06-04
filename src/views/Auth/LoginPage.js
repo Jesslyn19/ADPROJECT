@@ -31,8 +31,8 @@ const LoginPage = () => {
         localStorage.setItem("sessionExpiry", expiryTime); // optionally save username
 
         if (roleId === 1) history.push("/admin/dashboard");
-        else if (roleId === 2) history.push("/collector/dashboard");
-        else if (roleId === 3) history.push("/driver/dashboard");
+        else if (roleId === 3) history.push("/collector/dashboard");
+        else if (roleId === 2) history.push("/driver/dashboard");
         else setError("Unknown role. Please contact admin.");
       } else {
         setError("Invalid username or password.");
