@@ -38,6 +38,7 @@ import Maps from "views/Maps/Maps.js";
 import Task from "views/Task/Task.js";
 import Report from "views/report/report.js";
 import createReport from "views/report/create_report.js";
+import UserManagement from "views/User/User.js";
 //import NotificationsPage from "views/Notifications/Notifications.js";
 
 const dashboardRoutes = [
@@ -46,6 +47,14 @@ const dashboardRoutes = [
     name: "Dashboard",
     icon: Dashboard,
     component: DashboardPage,
+    layout: "/admin",
+  },
+
+  {
+    path: "/user",
+    name: "User Management",
+    icon: Person,
+    component: UserManagement,
     layout: "/admin",
   },
   {

@@ -243,6 +243,106 @@ app.delete("/api/customers/:id", async (req, res) => {
   }
 });
 
+app.get("/api/users", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      `SELECT u.*, r.role_name 
+       FROM tb_user u
+       JOIN tb_role r ON u.role_id = r.role_id
+       ORDER BY u.u_id ASC`
+    );
+    await connection.end();
+
+    console.log("Fetched from DB:", rows);
+    res.json(rows);
+  } catch (error) {
+    console.error("Error in /api/users:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/roles", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute("SELECT * FROM tb_role ORDER BY role_id ASC");
+    await connection.end();
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post("/api/users", async (req, res) => {
+  console.log("POST /api/users body:", req.body);
+
+  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id } = req.body;
+
+  if (
+    !u_name ||
+    !u_street ||
+    !u_postcode ||
+    !u_city ||
+    !u_state ||
+    !u_country ||
+    !role_id
+  ) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [result] = await connection.execute(
+      `INSERT INTO tb_user (u_name, u_street, u_postcode, u_city, u_state, u_country, role_id) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [u_name, u_street, u_postcode, u_city, u_state, u_country, role_id]
+    );
+    await connection.end();
+
+    res.status(201).json({
+      message: "User created successfully",
+      userId: result.insertId,
+    });
+  } catch (error) {
+    console.error("Error inserting user:", error);  // <-- log full error here
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// UPDATE a user
+app.put("/api/users/:id", async (req, res) => {
+  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id } = req.body;
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    await connection.execute(
+      `UPDATE tb_user 
+             SET u_name=?, u_street=?, u_postcode=?, u_city=?, u_state=?, u_country=?, role_id=?
+             WHERE u_id=?`,
+      [u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, req.params.id]
+    );
+    await connection.end();
+    res.json({ message: "User updated successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE a user
+app.delete("/api/users/:id", async (req, res) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    await connection.execute("DELETE FROM tb_user WHERE u_id = ?", [
+      req.params.id,
+    ]);
+    await connection.end();
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 //-----------------------------------------------------------------------
 // Bins section
 app.get("/api/smartbins", async (req, res) => {
