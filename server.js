@@ -14,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use('/downloads', express.static(path.join(__dirname, 'downloads')));
 
 // DB Config
 const dbConfig = {
@@ -83,21 +84,31 @@ app.put("/api/images/:id", async (req, res) => {
 
 app.get("/api/tasks", async (req, res) => {
   try {
+    
+    const { date } = req.query;
+
+    const selectedDate = date || new Date().toISOString().split("T")[0];
+
     const connection = await mysql.createConnection(dbConfig);
 
-    const [rows] = await connection.execute(`
+    const [rows] = await connection.execute(
+      `
       SELECT 
         s.sb_id,
         s.sb_plate,
+        t.t_plate AS incharge,
         i.i_url,
         i.i_file,
         i.i_time,
         i.i_date
       FROM tb_smartbin s
+      LEFT JOIN tb_truck t ON s.t_id = t.t_id
       LEFT JOIN tb_image i 
-        ON s.sb_id = i.sb_id 
+        ON s.sb_plate = i.i_plate AND DATE(i.i_date) = ?
       ORDER BY s.sb_id ASC
-    `);
+      `,
+      [selectedDate]
+    );
 
     await connection.end();
 
@@ -108,7 +119,7 @@ app.get("/api/tasks", async (req, res) => {
 
     res.json(enrichedRows);
   } catch (error) {
-    console.error("Error fetching merged smartbin/image data:", error);
+    console.error("Error fetching task list:", error);
     res.status(500).json({ error: error.message });
   }
 });
