@@ -358,7 +358,7 @@ app.get("/api/smartbins", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      "SELECT sb_id, sb_plate, sb_latitude, sb_longitude, sb_status, c_id, t_id FROM tb_smartbin"
+      "SELECT sb_id, sb_plate, sb_latitude, sb_longitude, c_id, t_id FROM tb_smartbin"
     );
     await connection.end();
 
