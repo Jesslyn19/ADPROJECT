@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
 
+import logo from "assets/img/logo.png";
+
 const LoginPage = () => {
   const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes in ms
   const expiryTime = new Date().getTime() + SESSION_DURATION;
@@ -75,6 +77,7 @@ const LoginPage = () => {
             padding: "30px",
           }}
         >
+          <img src={logo} />
           <h1
             style={{
               fontSize: "28px",

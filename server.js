@@ -30,8 +30,6 @@ app.use(express.static(path.join(__dirname, "public")));
 // ===============================
 // 📸 Image Routes
 // ===============================
-
-
 app.post("/api/login", async (req, res) => {
   const { u_name, u_password } = req.body;
 
@@ -265,7 +263,9 @@ app.get("/api/users", async (req, res) => {
 app.get("/api/roles", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute("SELECT * FROM tb_role ORDER BY role_id ASC");
+    const [rows] = await connection.execute(
+      "SELECT * FROM tb_role ORDER BY role_id ASC"
+    );
     await connection.end();
     res.json(rows);
   } catch (error) {
@@ -273,11 +273,11 @@ app.get("/api/roles", async (req, res) => {
   }
 });
 
-
 app.post("/api/users", async (req, res) => {
   console.log("POST /api/users body:", req.body);
 
-  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id } = req.body;
+  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id } =
+    req.body;
 
   if (
     !u_name ||
@@ -305,21 +305,31 @@ app.post("/api/users", async (req, res) => {
       userId: result.insertId,
     });
   } catch (error) {
-    console.error("Error inserting user:", error);  // <-- log full error here
+    console.error("Error inserting user:", error); // <-- log full error here
     res.status(500).json({ error: error.message });
   }
 });
 
 // UPDATE a user
 app.put("/api/users/:id", async (req, res) => {
-  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id } = req.body;
+  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id } =
+    req.body;
   try {
     const connection = await mysql.createConnection(dbConfig);
     await connection.execute(
       `UPDATE tb_user 
              SET u_name=?, u_street=?, u_postcode=?, u_city=?, u_state=?, u_country=?, role_id=?
              WHERE u_id=?`,
-      [u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, req.params.id]
+      [
+        u_name,
+        u_street,
+        u_postcode,
+        u_city,
+        u_state,
+        u_country,
+        role_id,
+        req.params.id,
+      ]
     );
     await connection.end();
     res.json({ message: "User updated successfully" });
@@ -341,7 +351,6 @@ app.delete("/api/users/:id", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 //-----------------------------------------------------------------------
 // Bins section
@@ -435,36 +444,6 @@ app.get("/api/total-bins", async (req, res) => {
   }
 });
 
-//get total collected bins
-app.get("/api/collected-bins", async (req, res) => {
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute(
-      "SELECT COUNT(*) AS total FROM tb_smartbin WHERE sb_status='Collected'"
-    );
-    await connection.end();
-
-    res.json({ total: rows[0].total });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-//get total missed bins
-app.get("/api/missed-bins", async (req, res) => {
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute(
-      "SELECT COUNT(*) AS total FROM tb_smartbin WHERE sb_status='Missed'"
-    );
-    await connection.end();
-
-    res.json({ total: rows[0].total });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 //get total customer
 app.get("/api/total-customers", async (req, res) => {
   try {
@@ -498,15 +477,24 @@ app.post("/api/create_report", upload.single("image"), async (req, res) => {
   const image = req.file
     ? `http://localhost:5000/uploads/${req.file.filename}`
     : null;
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [result] = await connection.execute(
+      `INSERT INTO tb_report (r_subject, r_content, r_image, r_writer, r_datetime)
+       VALUES (?, ?, ?, ?, NOW())`,
+      [subject, content, image, writer]
+    );
 
-  const connection = await mysql.createConnection(dbConfig);
-  const sql = `INSERT INTO tb_report (r_subject, r_content, r_image, r_writer, r_datetime)
-               VALUES (?, ?, ?, ?, NOW())`;
+    await connection.end();
 
-  connection.query(sql, [subject, content, image, writer], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(200).json({ message: "Report submitted successfully." });
-  });
+    res.status(201).json({
+      message: "Report submitted successfully",
+      reportId: result.insertId, // Optional: return the new report ID
+    });
+  } catch (error) {
+    console.error("Error creating report:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // delete a report

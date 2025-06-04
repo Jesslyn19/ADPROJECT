@@ -14,13 +14,13 @@ import Icon from "@material-ui/core/Icon";
 //import ArrowUpward from "@material-ui/icons/ArrowUpward";
 //import AccessTime from "@material-ui/icons/AccessTime";
 //import Accessibility from "@material-ui/icons/Accessibility";
-import BugReport from "@material-ui/icons/BugReport";
-import Code from "@material-ui/icons/Code";
-import Cloud from "@material-ui/icons/Cloud";
+import ReportProblem from "@material-ui/icons/ReportProblem";
+// import Code from "@material-ui/icons/Code";
+// import Cloud from "@material-ui/icons/Cloud";
 // core components
 import GridItem from "components/Grid/GridItem.js";
 import GridContainer from "components/Grid/GridContainer.js";
-import Table from "components/Table/Table.js";
+//import Table from "components/Table/Table.js";
 import Tasks from "components/Tasks/Tasks.js";
 import CustomTabs from "components/CustomTabs/CustomTabs.js";
 //import Danger from "components/Typography/Danger.js";
@@ -29,10 +29,9 @@ import CardHeader from "components/Card/CardHeader.js";
 import CardIcon from "components/Card/CardIcon.js";
 import CardBody from "components/Card/CardBody.js";
 import CardFooter from "components/Card/CardFooter.js";
-
 import MapComponent from "views/Maps/MapsDashboard.js";
-
-import { bugs, website, server } from "variables/general.js";
+import { TextField } from "@material-ui/core";
+//import { bugs, website, server } from "variables/general.js";
 
 // import {
 //   dailySalesChart,
@@ -47,71 +46,83 @@ const useStyles = makeStyles(styles);
 export default function Dashboard() {
   const classes = useStyles();
   const [totalBins, setTotalBins] = useState(0);
-  const [totalCollectedBins, setTotalCollectedBins] = useState(0);
-  const [totalMissedBins, setTotalMissedBins] = useState(0);
+  // const [totalCollectedBins, setTotalCollectedBins] = useState(0);
+  // const [totalMissedBins, setTotalMissedBins] = useState(0);
+  const [tasks, setTasks] = useState([]);
   const [totalCustomers, setTotalCustomers] = useState(0);
+  // eslint-disable-next-line no-unused-vars
+  const [reports, setReports] = useState([]);
+  const [bugs, setBugs] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [lastUpdated, setLastUpdated] = useState(Date.now());
+  // eslint-disable-next-line no-unused-vars
   const [timeAgo, setTimeAgo] = useState("just now");
+  // eslint-disable-next-line no-unused-vars
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+
+  const fetchTotalBins = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/total-bins");
+      setTotalBins(response.data.total);
+      setLastUpdated(Date.now());
+    } catch (error) {
+      console.error("Failed to fetch total bins:", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchTotalBins = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/api/total-bins"
-        );
-        setTotalBins(response.data.total);
-        setLastUpdated(Date.now());
-      } catch (error) {
-        console.error("Failed to fetch total bins:", error);
-      }
-    };
     fetchTotalBins();
   }, []);
 
-  useEffect(() => {
-    const fetchTotalCollectedBins = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/api/collected-bins"
-        );
-        setTotalCollectedBins(response.data.total);
-        setLastUpdated(Date.now());
-      } catch (error) {
-        console.error("Failed to fetch total collected bins:", error);
-      }
-    };
-    fetchTotalCollectedBins();
-  }, []);
+  const fetchTasks = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/tasks", {
+        params: { date: selectedDate },
+      });
+      setTasks(res.data);
+    } catch (error) {
+      console.error("Error fetching task list:", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchTotalMissedBins = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/api/missed-bins"
-        );
-        setTotalMissedBins(response.data.total);
-        setLastUpdated(Date.now());
-      } catch (error) {
-        console.error("Failed to fetch total missed bins:", error);
-      }
-    };
-    fetchTotalMissedBins();
-  }, []);
+    console.log("Fetching tasks for date:", selectedDate); // Check dev console
+    fetchTasks();
+  }, [selectedDate]);
+
+  const fetchTotalCustomers = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5000/api/total-customers"
+      );
+      setTotalCustomers(response.data.total);
+      setLastUpdated(Date.now());
+    } catch (error) {
+      console.error("Failed to fetch total customers:", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchTotalCustomers = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/api/total-customers"
-        );
-        setTotalCustomers(response.data.total);
-        setLastUpdated(Date.now());
-      } catch (error) {
-        console.error("Failed to fetch total customers:", error);
-      }
-    };
     fetchTotalCustomers();
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Re-fetch the data every 10 minutes
+      console.log("Auto-refreshing dashboard data...");
+
+      // Refetch all necessary data
+      fetchTotalBins();
+      fetchTasks();
+      fetchTotalCustomers();
+
+      setLastUpdated(Date.now()); // Update timestamp
+    });
+
+    return () => clearInterval(interval); // Clean up on unmount
+  }, [selectedDate]); // Optional: re-setup interval if date changes
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -128,6 +139,33 @@ export default function Dashboard() {
 
     return () => clearInterval(interval);
   }, [lastUpdated]);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/reports");
+
+        // Sort by r_datetime (latest first), then get top 5
+        const sortedReports = res.data
+          .sort((a, b) => new Date(b.r_datetime) - new Date(a.r_datetime))
+          .slice(0, 5); // Get the 5 most recent reports
+
+        setReports(sortedReports);
+
+        // Optional: if you want to turn it into a bugs-style array:
+        const bugList = sortedReports.map(
+          (report) => report.r_subject ?? "Untitled Report"
+        );
+        console.log("Recent bug list:", bugList);
+        // You could also store it in a useState: setBugs(bugList)
+        setBugs(bugList);
+      } catch (error) {
+        console.error("Error fetching reports:", error);
+      }
+    };
+
+    fetchReports();
+  }, []);
 
   return (
     <div>
@@ -159,7 +197,8 @@ export default function Dashboard() {
               </CardIcon>
               <p className={classes.cardCategory}>Total Collected</p>
               <h3 className={classes.cardTitle}>
-                {totalCollectedBins}/{totalBins} <small>bins</small>
+                {tasks.filter((task) => task.status === "Done").length}/
+                {totalBins} <small>bins</small>
               </h3>
             </CardHeader>
             <CardFooter stats>
@@ -178,7 +217,8 @@ export default function Dashboard() {
               </CardIcon>
               <p className={classes.cardCategory}>Total Missed</p>
               <h3 className={classes.cardTitle}>
-                {totalMissedBins}/{totalBins} <small>bins</small>
+                {tasks.filter((task) => task.status === "Missed").length}/
+                {totalBins} <small>bins</small>
               </h3>
             </CardHeader>
             <CardFooter stats>
@@ -209,45 +249,25 @@ export default function Dashboard() {
       </GridContainer>
       <GridContainer>
         <GridItem xs={12} sm={12} md={12}>
-          <MapComponent></MapComponent>
+          <div>
+            <MapComponent></MapComponent>
+          </div>
         </GridItem>
       </GridContainer>
       <GridContainer>
         <GridItem xs={12} sm={12} md={6}>
           <CustomTabs
-            title="Tasks:"
+            title="Reports:"
             headerColor="primary"
             tabs={[
               {
-                tabName: "Bugs",
-                tabIcon: BugReport,
+                tabName: " 5 Latest Report",
+                tabIcon: ReportProblem,
                 tabContent: (
                   <Tasks
-                    checkedIndexes={[0, 3]}
-                    tasksIndexes={[0, 1, 2, 3]}
+                    checkedIndexes={[]}
+                    tasksIndexes={bugs.map((_, index) => index)}
                     tasks={bugs}
-                  />
-                ),
-              },
-              {
-                tabName: "Website",
-                tabIcon: Code,
-                tabContent: (
-                  <Tasks
-                    checkedIndexes={[0]}
-                    tasksIndexes={[0, 1]}
-                    tasks={website}
-                  />
-                ),
-              },
-              {
-                tabName: "Server",
-                tabIcon: Cloud,
-                tabContent: (
-                  <Tasks
-                    checkedIndexes={[1]}
-                    tasksIndexes={[0, 1, 2]}
-                    tasks={server}
                   />
                 ),
               },
@@ -257,21 +277,17 @@ export default function Dashboard() {
         <GridItem xs={12} sm={12} md={6}>
           <Card>
             <CardHeader color="warning">
-              <h4 className={classes.cardTitleWhite}>Employees Stats</h4>
+              <h4 className={classes.cardTitleWhite}>Notepad</h4>
               <p className={classes.cardCategoryWhite}>
-                New employees on 15th September, 2016
+                Feel free to write anything
               </p>
             </CardHeader>
             <CardBody>
-              <Table
-                tableHeaderColor="warning"
-                tableHead={["ID", "Name", "Salary", "Country"]}
-                tableData={[
-                  ["1", "Dakota Rice", "$36,738", "Niger"],
-                  ["2", "Minerva Hooper", "$23,789", "Curaçao"],
-                  ["3", "Sage Rodriguez", "$56,142", "Netherlands"],
-                  ["4", "Philip Chaney", "$38,735", "Korea, South"],
-                ]}
+              <TextField
+                label="Write Anything Here..."
+                fullWidth
+                multiline
+                rows={10}
               />
             </CardBody>
           </Card>

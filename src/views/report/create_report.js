@@ -83,7 +83,7 @@ export default function Report() {
   }, []);
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 9 }}>
       <Paper style={{ padding: 20 }}>
         <Typography variant="h5" gutterBottom>
           Create New Report
