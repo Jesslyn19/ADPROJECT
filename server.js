@@ -31,6 +31,37 @@ app.use(express.static(path.join(__dirname, "public")));
 // 📸 Image Routes
 // ===============================
 
+
+app.post("/api/login", async (req, res) => {
+  const { u_name, u_password } = req.body;
+
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+
+    const [rows] = await connection.execute(
+      `SELECT u.u_name, u.u_password, r.role_id, r.role_name
+       FROM tb_user u
+       JOIN tb_role r ON u.role_id = r.role_id
+       WHERE u.u_name = ? AND u.u_password = ?`,
+      [u_name, u_password]
+    );
+
+    await connection.end();
+
+    if (rows.length > 0) {
+      res.json({
+        success: true,
+        role_id: rows[0].role_id,
+        role_name: rows[0].role_name,
+      });
+    } else {
+      res.json({ success: false, message: "Invalid credentials" });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // GET all images
 app.get("/api/images", async (req, res) => {
   try {
