@@ -21,7 +21,7 @@ import { BrowserRouter, Route, Switch, Redirect } from "react-router-dom";
 
 // layouts
 import Admin from "layouts/Admin.js";
-// import Collector from "layouts/Collector.js";
+import Collector from "layouts/Collector.js";
 import Driver from "layouts/Driver.js";
 import LoginPage from "views/Auth/LoginPage.js";
 
@@ -39,7 +39,11 @@ ReactDOM.render(
 
       {/* Role-protected routes */}
       <ProtectedRoute path="/admin" component={Admin} allowedRoles={[1]} />
-      {/* <ProtectedRoute path="/collector" component={Collector} allowedRoles={[2]} />*/}
+      <ProtectedRoute
+        path="/collector"
+        component={Collector}
+        allowedRoles={[2]}
+      />
       <ProtectedRoute path="/driver" component={Driver} allowedRoles={[3]} />
 
       {/* Redirect any other route to login */}
