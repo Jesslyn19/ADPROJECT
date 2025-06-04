@@ -114,34 +114,6 @@ const dashboardRoutes = [
     component: Report,
     layout: "/admin",
   },
-  {
-    path: "/create_report",
-    name: "Write Report",
-    icon: CreateIcon,
-    component: createReport,
-    layout: "/admin",
-  },
-  //{
-  //  path: "/notifications",
-  //  name: "Notifications",
-  //  icon: Notifications,
-  //  component: NotificationsPage,
-  //  layout: "/admin",
-  //},
-  {
-    path: "/map",
-    name: "Driver Map",
-    icon: LocationOn,
-    component: DriverMaps,
-    layout: "/driver",
-  },
-  {
-    path: "/report",
-    name: "Write Report",
-    icon: CreateIcon,
-    component: createReport,
-    layout: "/driver",
-  },
 ];
 
 export default dashboardRoutes;
