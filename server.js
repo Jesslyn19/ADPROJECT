@@ -90,11 +90,12 @@ app.get("/api/tasks", async (req, res) => {
         s.sb_id,
         s.sb_plate,
         i.i_url,
-        i.i_time
+        i.i_file,
+        i.i_time,
+        i.i_date
       FROM tb_smartbin s
       LEFT JOIN tb_image i 
         ON s.sb_id = i.sb_id 
-        AND i.i_date = CURDATE()
       ORDER BY s.sb_id ASC
     `);
 
