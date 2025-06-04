@@ -3,6 +3,8 @@ import { useHistory } from "react-router-dom";
 import axios from "axios";
 
 const LoginPage = () => {
+  const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes in ms
+  const expiryTime = new Date().getTime() + SESSION_DURATION;
   const [u_name, setUName] = useState("");
   const [u_password, setUPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,6 +21,13 @@ const LoginPage = () => {
 
       if (response.data.success) {
         const roleId = response.data.role_id;
+
+        // Save user role and logged-in status
+        localStorage.setItem("role_id", roleId);
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("username", u_name);
+        localStorage.setItem("sessionExpiry", expiryTime); // optionally save username
+
         if (roleId === 1) history.push("/admin/dashboard");
         else if (roleId === 2) history.push("/collector/dashboard");
         else if (roleId === 3) history.push("/driver/dashboard");
