@@ -119,7 +119,7 @@ export default function ImagePage() {
   };
 
   return (
-    <div style={{ padding: 16 }}>
+    <div style={{ padding: 10 }}>
       {/* 🔄 Top Controls Section */}
       <div
         style={{
@@ -130,77 +130,7 @@ export default function ImagePage() {
           gap: "16px",
           marginBottom: "16px",
         }}
-      >
-        {/* Filter Controls */}
-        <div
-          style={{
-            display: "flex",
-            gap: "16px",
-            flexWrap: "wrap",
-            alignItems: "center",
-            flex: 1,
-          }}
-        >
-          <TextField
-            label="Search Plate"
-            variant="outlined"
-            size="small"
-            value={searchPlate}
-            onChange={(e) => setSearchPlate(e.target.value)}
-            style={{ minWidth: 180 }}
-          />
-          <TextField
-            select
-            label="Sort by Time"
-            variant="outlined"
-            size="small"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            style={{ minWidth: 180 }}
-          >
-            <MenuItem value="newest">Newest First</MenuItem>
-            <MenuItem value="oldest">Oldest First</MenuItem>
-          </TextField>
-          <TextField
-            label="Start Date"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            size="small"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-          <TextField
-            label="End Date"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            size="small"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-          <TextField
-            select
-            label="Plate Status"
-            variant="outlined"
-            size="small"
-            value={plateStatusFilter}
-            onChange={(e) => setPlateStatusFilter(e.target.value)}
-            style={{ minWidth: 180 }}
-          >
-            <MenuItem value="all">All</MenuItem>
-            <MenuItem value="attention">⚠️ With Attention</MenuItem>
-            <MenuItem value="no-attention">✅ No Attention</MenuItem>
-          </TextField>
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={clearFilters}
-            style={{ height: "40px", alignSelf: "center" }}
-          >
-            Clear Filters
-          </Button>
-        </div>
-      </div>
-
+      ></div>
       <div
         style={{
           display: "flex",
@@ -211,8 +141,21 @@ export default function ImagePage() {
           marginBottom: "16px",
         }}
       >
-        <Typography variant="h4" gutterBottom>
+        <Typography
+          variant="h4"
+          gutterBottom
+          style={{ display: "flex", alignItems: "center", gap: 8 }}
+        >
           Bin Plate Detection Records
+          {statusMessage && (
+            <Typography
+              variant="subtitle1"
+              component="span"
+              style={{ marginLeft: 8 }}
+            >
+              {statusMessage}
+            </Typography>
+          )}
         </Typography>
 
         <Button
@@ -229,19 +172,80 @@ export default function ImagePage() {
       <div
         style={{
           display: "flex",
+          gap: "16px",
+          flexWrap: "wrap",
+          alignItems: "center",
+          flex: 1,
+        }}
+      >
+        <TextField
+          label="Search Plate"
+          variant="outlined"
+          size="small"
+          value={searchPlate}
+          onChange={(e) => setSearchPlate(e.target.value)}
+          style={{ minWidth: 180 }}
+        />
+        <TextField
+          select
+          label="Sort by Time"
+          variant="outlined"
+          size="small"
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+          style={{ minWidth: 180 }}
+        >
+          <MenuItem value="newest">Newest First</MenuItem>
+          <MenuItem value="oldest">Oldest First</MenuItem>
+        </TextField>
+        <TextField
+          label="Start Date"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          size="small"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+        />
+        <TextField
+          label="End Date"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          size="small"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+        />
+        <TextField
+          select
+          label="Plate Status"
+          variant="outlined"
+          size="small"
+          value={plateStatusFilter}
+          onChange={(e) => setPlateStatusFilter(e.target.value)}
+          style={{ minWidth: 180 }}
+        >
+          <MenuItem value="all">All</MenuItem>
+          <MenuItem value="attention">⚠️ With Attention</MenuItem>
+          <MenuItem value="no-attention">✅ No Attention</MenuItem>
+        </TextField>
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={clearFilters}
+          style={{ height: "40px", alignSelf: "center" }}
+        >
+          Clear Filters
+        </Button>
+      </div>
+      <div
+        style={{
+          display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
           gap: "10px",
           marginBottom: "10px",
         }}
-      >
-        {statusMessage && (
-          <Typography variant="subtitle1" style={{ marginBottom: 12 }}>
-            {statusMessage}
-          </Typography>
-        )}
-      </div>
+      ></div>
       {/* 🔤 Title */}
 
       {/* 📋 Table Section */}

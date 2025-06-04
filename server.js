@@ -14,7 +14,7 @@ app.use(cors());
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use('/downloads', express.static(path.join(__dirname, 'downloads')));
+app.use("/downloads", express.static(path.join(__dirname, "downloads")));
 
 // DB Config
 const dbConfig = {
@@ -84,7 +84,6 @@ app.put("/api/images/:id", async (req, res) => {
 
 app.get("/api/tasks", async (req, res) => {
   try {
-    
     const { date } = req.query;
 
     const selectedDate = date || new Date().toISOString().split("T")[0];
