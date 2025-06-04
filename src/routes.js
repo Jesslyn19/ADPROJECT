@@ -39,6 +39,7 @@ import Task from "views/Task/Task.js";
 import Report from "views/report/report.js";
 import createReport from "views/report/create_report.js";
 import UserManagement from "views/User/User.js";
+import DriverMaps from "views/Driver/DriverMaps.js";
 //import NotificationsPage from "views/Notifications/Notifications.js";
 
 const dashboardRoutes = [
@@ -92,7 +93,6 @@ const dashboardRoutes = [
     component: Maps,
     layout: "/admin",
   },
-
   {
     path: "/task",
     name: "Task List",
@@ -128,6 +128,20 @@ const dashboardRoutes = [
   //  component: NotificationsPage,
   //  layout: "/admin",
   //},
+  {
+    path: "/map",
+    name: "Driver Map",
+    icon: LocationOn,
+    component: DriverMaps,
+    layout: "/driver",
+  },
+  {
+    path: "/report",
+    name: "Write Report",
+    icon: CreateIcon,
+    component: createReport,
+    layout: "/driver",
+  },
 ];
 
 export default dashboardRoutes;

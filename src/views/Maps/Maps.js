@@ -24,8 +24,8 @@ const DEPOT_LOCATION = { lat: 1.4234, lng: 103.6312 };
 const DEFAULT_ZOOM = 13;
 
 const BIN_ICONS = {
-  active: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
-  inactive: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+  collected: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+  missed: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
 };
 
 const Maps = () => {
@@ -66,7 +66,10 @@ const Maps = () => {
 
       // Process trucks data
       const processedTrucks = truckRes.data.map((truck) => {
-        const driver = userRes.data.find((u) => u.u_id === truck.driver_id);
+        // CORRECTED: Match truck.driver_id with user.u_id
+        const driver = userRes.data.find(
+          (user) => user.u_id === truck.driver_id
+        );
         return {
           ...truck,
           driverName: driver?.u_name || "No Driver",
@@ -282,7 +285,6 @@ const Maps = () => {
                 title={`Truck: ${truck.t_plate}\nDriver: ${truck.driverName}`}
                 icon={{
                   url: truck.t_id === 1 ? TRUCK_ICONS.blue : TRUCK_ICONS.orange,
-                  // Ensure window.google.maps.Size is accessed only after API is loaded
                   scaledSize: new window.google.maps.Size(50, 30),
                 }}
               />
@@ -341,9 +343,9 @@ const Maps = () => {
                 title={`Bin: ${bin.sb_plate}\nStatus: ${bin.sb_status}`}
                 icon={{
                   url:
-                    bin.sb_status === "Active"
-                      ? BIN_ICONS.active
-                      : BIN_ICONS.inactive,
+                    bin.sb_status === "Collected"
+                      ? BIN_ICONS.collected
+                      : BIN_ICONS.missed,
                   // Ensure window.google.maps.Size is accessed only after API is loaded
                   scaledSize: new window.google.maps.Size(32, 32),
                 }}
