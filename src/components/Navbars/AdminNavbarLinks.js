@@ -227,15 +227,8 @@ import React from "react";
 import { useHistory } from "react-router-dom";
 // Material-UI components
 import { makeStyles } from "@material-ui/core/styles";
-import MenuItem from "@material-ui/core/MenuItem";
-import MenuList from "@material-ui/core/MenuList";
-import Grow from "@material-ui/core/Grow";
-import Paper from "@material-ui/core/Paper";
-import ClickAwayListener from "@material-ui/core/ClickAwayListener";
-import Poppers from "@material-ui/core/Popper";
-import Person from "@material-ui/icons/Person";
+import ExitToAppIcon from "@material-ui/icons/ExitToApp";
 import Button from "components/CustomButtons/Button.js";
-
 import styles from "assets/jss/material-dashboard-react/components/headerLinksStyle.js";
 
 const useStyles = makeStyles(styles);
@@ -243,20 +236,6 @@ const useStyles = makeStyles(styles);
 export default function AdminNavbarLinks() {
   const classes = useStyles();
   const history = useHistory();
-
-  const [openProfile, setOpenProfile] = React.useState(null);
-
-  const handleClickProfile = (event) => {
-    if (openProfile && openProfile.contains(event.target)) {
-      setOpenProfile(null);
-    } else {
-      setOpenProfile(event.currentTarget);
-    }
-  };
-
-  const handleCloseProfile = () => {
-    setOpenProfile(null);
-  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -269,49 +248,11 @@ export default function AdminNavbarLinks() {
         color={window.innerWidth > 959 ? "transparent" : "white"}
         justIcon={window.innerWidth > 959}
         simple={!(window.innerWidth > 959)}
-        aria-owns={openProfile ? "profile-menu-list-grow" : null}
-        aria-haspopup="true"
-        onClick={handleClickProfile}
+        onClick={handleLogout}
         className={classes.buttonLink}
       >
-        <Person className={classes.icons} />
+        <ExitToAppIcon style={{ fontSize: 50 }} />
       </Button>
-      <Poppers
-        open={Boolean(openProfile)}
-        anchorEl={openProfile}
-        transition
-        disablePortal
-        className={
-          (openProfile ? "" : classes.popperClose) + " " + classes.popperNav
-        }
-      >
-        {({ TransitionProps, placement }) => (
-          <Grow
-            {...TransitionProps}
-            id="profile-menu-list-grow"
-            style={{
-              transformOrigin:
-                placement === "bottom" ? "center top" : "center bottom",
-            }}
-          >
-            <Paper>
-              <ClickAwayListener onClickAway={handleCloseProfile}>
-                <MenuList role="menu">
-                  <MenuItem
-                    onClick={() => {
-                      handleCloseProfile();
-                      handleLogout();
-                    }}
-                    className={classes.dropdownItem}
-                  >
-                    Logout
-                  </MenuItem>
-                </MenuList>
-              </ClickAwayListener>
-            </Paper>
-          </Grow>
-        )}
-      </Poppers>
     </div>
   );
 }
