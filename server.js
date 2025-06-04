@@ -354,7 +354,7 @@ const upload = multer({ storage: storage });
 app.post("/api/create_report", upload.single("image"), async (req, res) => {
   const { writer, subject, content } = req.body;
   const image = req.file
-    ? `http://localhost:3001/uploads/${req.file.filename}`
+    ? `http://localhost:5000/uploads/${req.file.filename}`
     : null;
 
   const connection = await mysql.createConnection(dbConfig);
