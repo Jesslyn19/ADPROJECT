@@ -276,7 +276,7 @@ app.get("/api/roles", async (req, res) => {
 app.post("/api/users", async (req, res) => {
   console.log("POST /api/users body:", req.body);
 
-  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id } =
+  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password } =
     req.body;
 
   if (
@@ -286,7 +286,8 @@ app.post("/api/users", async (req, res) => {
     !u_city ||
     !u_state ||
     !u_country ||
-    !role_id
+    !role_id ||
+    !u_password
   ) {
     return res.status(400).json({ error: "All fields are required" });
   }
@@ -294,9 +295,9 @@ app.post("/api/users", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [result] = await connection.execute(
-      `INSERT INTO tb_user (u_name, u_street, u_postcode, u_city, u_state, u_country, role_id) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [u_name, u_street, u_postcode, u_city, u_state, u_country, role_id]
+      `INSERT INTO tb_user (u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password]
     );
     await connection.end();
 
@@ -312,13 +313,13 @@ app.post("/api/users", async (req, res) => {
 
 // UPDATE a user
 app.put("/api/users/:id", async (req, res) => {
-  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id } =
+  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password} =
     req.body;
   try {
     const connection = await mysql.createConnection(dbConfig);
     await connection.execute(
       `UPDATE tb_user 
-             SET u_name=?, u_street=?, u_postcode=?, u_city=?, u_state=?, u_country=?, role_id=?
+             SET u_name=?, u_street=?, u_postcode=?, u_city=?, u_state=?, u_country=?, role_id=?, u_password=?
              WHERE u_id=?`,
       [
         u_name,
@@ -328,6 +329,7 @@ app.put("/api/users/:id", async (req, res) => {
         u_state,
         u_country,
         role_id,
+        u_password,
         req.params.id,
       ]
     );

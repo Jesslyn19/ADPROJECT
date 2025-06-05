@@ -19,7 +19,12 @@ import {
   Grid,
   Typography,
   MenuItem,
+  InputAdornment,
+  IconButton,
 } from "@material-ui/core";
+
+import Visibility from "@material-ui/icons/Visibility";
+import VisibilityOff from "@material-ui/icons/VisibilityOff";
 
 export default function User() {
   const [users, setusers] = useState([]);
@@ -29,6 +34,7 @@ export default function User() {
   const [creating, setCreating] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [roles, setRoles] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
   const [newUser, setNewUser] = useState({
     u_name: "",
     u_street: "",
@@ -89,6 +95,7 @@ export default function User() {
       );
       fetchUsers();
       handleDialogClose();
+      alert("User updated successfully!");
     } catch (error) {
       console.error("Error updating user:", error);
     }
@@ -119,6 +126,7 @@ export default function User() {
         u_state: "",
         u_country: "",
         role_id: "",
+        u_password: "",
       });
       setShowForm(false);
     } catch (error) {
@@ -151,7 +159,7 @@ export default function User() {
             Create New User
           </Typography>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 name="u_name"
                 label="Name"
@@ -160,7 +168,45 @@ export default function User() {
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="u_password"
+                label="Password"
+                type={showPassword ? "text" : "password"} // 👈 Toggle between text & password
+                value={newUser.u_password}
+                onChange={handleNewUserChange}
+                fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <Visibility /> : <VisibilityOff />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                select
+                name="role_id"
+                label="Role"
+                value={newUser.role_id}
+                onChange={handleNewUserChange}
+                fullWidth
+              >
+                {roles.map((role) => (
+                  <MenuItem key={role.role_id} value={role.role_id}>
+                    {role.role_name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={4}>
               <TextField
                 name="u_street"
                 label="Street"
@@ -196,7 +242,7 @@ export default function User() {
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={4}>
               <TextField
                 name="u_country"
                 label="Country"
@@ -204,22 +250,6 @@ export default function User() {
                 onChange={handleNewUserChange}
                 fullWidth
               />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                select
-                name="role_id"
-                label="Role"
-                value={newUser.role_id}
-                onChange={handleNewUserChange}
-                fullWidth
-              >
-                {roles.map((role) => (
-                  <MenuItem key={role.role_id} value={role.role_id}>
-                    {role.role_name}
-                  </MenuItem>
-                ))}
-              </TextField>
             </Grid>
             <Grid item xs={12}>
               <Button
@@ -301,6 +331,26 @@ export default function User() {
                 onChange={handleChange}
                 fullWidth
                 margin="dense"
+              />
+              <TextField
+                name="u_password"
+                label="Password"
+                type={showPassword ? "text" : "password"} // 👈 Toggle between text & password
+                value={editingUser.u_password}
+                onChange={handleChange}
+                fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <Visibility /> : <VisibilityOff />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
               <TextField
                 select
