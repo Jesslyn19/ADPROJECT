@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { LoadScript, GoogleMap } from "@react-google-maps/api"; // Import GoogleMap
+import { LoadScript, GoogleMap } from "@react-google-maps/api";
+import { Button } from "@material-ui/core";
 import axios from "axios";
 import truckblue from "assets/img/truck-blue.png";
 import truckgreen from "assets/img/truck-green.png";
@@ -7,13 +8,39 @@ import truckgreen from "assets/img/truck-green.png";
 // Constants
 const MAP_CONTAINER_STYLE = {
   width: "100%",
-  height: "calc(100vh - 250px)",
+  height: "100%",
   borderRadius: "8px",
   border: "1px solid #e2e8f0",
+  backgroundColor: "black",
 };
 
-const DEFAULT_ZOOM = 13;
-const DEPOT_LOCATION = { lat: 1.4234, lng: 103.6312 };
+const CONTAINER_MAIN_STYLE = {
+  display: "flex",
+  height: "calc(100vh - 64px)",
+  overflow: "hidden",
+};
+
+const LEFT_PANEL_STYLE = {
+  width: "380px",
+  flexShrink: 0,
+  backgroundColor: "#f9fafb",
+  padding: "24px",
+  borderRight: "1px solid #e5e7eb",
+  boxShadow: "6px 0 15px rgba(0, 0, 0, 0.05)",
+  overflowY: "auto",
+  zIndex: 20,
+  borderRadius: "0 16px 16px 0",
+  fontFamily: "'Inter', sans-serif",
+};
+
+const MAP_PANEL_STYLE = {
+  // Renamed for clarity
+  flexGrow: 1,
+  height: "100%",
+};
+
+const DEFAULT_ZOOM = 16;
+const DEPOT_LOCATION = { lat: 1.4234, lng: 103.6312 }; // Your depot location
 
 const TRUCK_ICONS = {
   blue: truckblue,
@@ -27,13 +54,16 @@ const BIN_ICONS = {
   default: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
 };
 
+// Define libraries array once outside the component to prevent re-creation
+const googleMapsLibraries = ["geometry", "places", "marker"];
+
 const DriverMaps = () => {
   const currentDriverId = parseInt(localStorage.getItem("userId"));
-  // const mapDivRef = useRef(null); // No longer directly needed for map init with GoogleMap component
-  const googleMapRef = useRef(null); // Ref for the GoogleMap component's map instance
+  const googleMapRef = useRef(null);
   const directionsService = useRef(null);
   const directionsRenderer = useRef(null);
   const markers = useRef([]);
+
   const [isMapInstanceReady, setIsMapInstanceReady] = useState(false);
   const [driverTruck, setDriverTruck] = useState(null);
   const [assignedBins, setAssignedBins] = useState([]);
@@ -69,9 +99,9 @@ const DriverMaps = () => {
 
         if (foundTruck) {
           setDriverTruck(foundTruck);
-          const binsForTruck = smartbinsRes.data
-            .filter((bin) => bin.t_id === foundTruck.t_id)
-            .sort((a, b) => a.sb_sequence - b.sb_sequence);
+          const binsForTruck = smartbinsRes.data.filter(
+            (bin) => bin.t_id === foundTruck.t_id
+          );
 
           setAssignedBins(binsForTruck);
           console.log("Assigned Bins for truck:", binsForTruck);
@@ -99,24 +129,21 @@ const DriverMaps = () => {
   }, [currentDriverId]);
 
   // --- Google Maps API Loading & Map Initialization ---
-  // onLoad callback for LoadScript to confirm API is loaded (optional, but good for state)
   const onGoogleApiLoadedFromLoadScript = useCallback(() => {
     console.log("Google Maps API script loaded via LoadScript.");
     setIsGoogleApiLoaded(true);
   }, []);
 
-  // onLoad callback for GoogleMap component to get the map instance
   const onMapLoad = useCallback((map) => {
-    googleMapRef.current = map; // Store the map instance
+    googleMapRef.current = map;
     console.log(
       "GoogleMap component loaded. Map instance:",
       googleMapRef.current
     );
 
-    // Initialize DirectionsService and DirectionsRenderer here
     directionsService.current = new window.google.maps.DirectionsService();
     directionsRenderer.current = new window.google.maps.DirectionsRenderer({
-      map: googleMapRef.current, // Pass the map instance
+      map: googleMapRef.current,
       suppressMarkers: true,
       polylineOptions: {
         strokeColor: "#4285F4",
@@ -137,7 +164,7 @@ const DriverMaps = () => {
     googleMapRef.current = null;
     directionsService.current = null;
     directionsRenderer.current = null;
-    setIsGoogleApiLoaded(false); // Reset API loaded state on unmount
+    setIsGoogleApiLoaded(false);
     setIsMapInstanceReady(false);
     console.log("Map unmounted and resources cleared.");
   }, []);
@@ -185,7 +212,6 @@ const DriverMaps = () => {
     markers.current.forEach((marker) => marker.setMap(null));
     markers.current = [];
 
-    // Ensure truck coordinates are available, otherwise use depot as origin
     const origin =
       driverTruck.t_latitude && driverTruck.t_longitude
         ? { lat: driverTruck.t_latitude, lng: driverTruck.t_longitude }
@@ -245,7 +271,6 @@ const DriverMaps = () => {
     (response) => {
       console.log("addCustomMarkers called. Response present:", !!response);
       if (!googleMapRef.current || !response) {
-        // Use googleMapRef.current
         console.warn("Skipping marker addition: map or response not ready.");
         return;
       }
@@ -263,7 +288,7 @@ const DriverMaps = () => {
 
       const depotMarker = new window.google.maps.Marker({
         position: DEPOT_LOCATION,
-        map: googleMapRef.current, // Use googleMapRef.current
+        map: googleMapRef.current,
         icon: {
           url: BIN_ICONS.default,
           scaledSize: new window.google.maps.Size(32, 32),
@@ -280,10 +305,7 @@ const DriverMaps = () => {
           binIconUrl = BIN_ICONS.missed;
         }
 
-        // Highlight the current active destination bin based on sequence
-        // Note: This logic assumes bin.sb_sequence matches leg index + 1 for intermediate bins
-        // or matches the last bin for the final destination.
-        // You might need to adjust this if your sequence numbers don't perfectly map to legs.
+        // Highlight the current active destination bin based on currentLegIndex
         if (
           currentLegIndex < assignedBins.length &&
           index === currentLegIndex
@@ -293,12 +315,12 @@ const DriverMaps = () => {
 
         const marker = new window.google.maps.Marker({
           position: { lat: bin.sb_latitude, lng: bin.sb_longitude },
-          map: googleMapRef.current, // Use googleMapRef.current
+          map: googleMapRef.current,
           icon: {
             url: binIconUrl,
             scaledSize: new window.google.maps.Size(32, 32),
           },
-          title: `Bin ID: ${bin.sb_id}\nStatus: ${bin.sb_status}\nSequence: ${bin.sb_sequence}`,
+          title: `Bin ID: ${bin.sb_id}\nStatus: ${bin.sb_status}\n`,
           label: {
             text: String(index + 1),
             color: "white",
@@ -316,11 +338,11 @@ const DriverMaps = () => {
         const truckPosition =
           driverTruck.t_latitude && driverTruck.t_longitude
             ? { lat: driverTruck.t_latitude, lng: driverTruck.t_longitude }
-            : (currentLeg && currentLeg.start_location) || DEPOT_LOCATION; // Fallback to current leg start or depot
+            : route.legs[currentLegIndex]?.start_location || DEPOT_LOCATION; // Fallback to current leg start or depot
 
         const truckMarker = new window.google.maps.Marker({
           position: truckPosition,
-          map: googleMapRef.current, // Use googleMapRef.current
+          map: googleMapRef.current,
           icon: {
             url: driverTruck.t_id === 1 ? TRUCK_ICONS.blue : TRUCK_ICONS.orange,
             scaledSize: new window.google.maps.Size(50, 30),
@@ -331,10 +353,9 @@ const DriverMaps = () => {
         markers.current.push(truckMarker);
       }
     },
-    [assignedBins, currentLegIndex, driverTruck] // isGoogleApiLoaded no longer needed here as a direct dependency
+    [assignedBins, currentLegIndex, driverTruck]
   );
 
-  // Effect to recalculate and display route when data is loaded
   // Effect to recalculate and display route when data is loaded
   useEffect(() => {
     console.log("Effect: Check for route calculation trigger. State:", {
@@ -343,8 +364,6 @@ const DriverMaps = () => {
       driverTruckPresent: !!driverTruck,
       assignedBinsCount: assignedBins.length,
     });
-    // Ensure both Google Maps API is loaded AND the GoogleMap component has rendered and provided a map instance
-    // AND we have truck/bins data.
     if (
       isGoogleApiLoaded &&
       isMapInstanceReady &&
@@ -356,7 +375,6 @@ const DriverMaps = () => {
       );
       calculateAndDisplayRoute();
     } else if (isGoogleApiLoaded && driverTruck && assignedBins.length === 0) {
-      // If API loaded, truck present but no bins, clear map if necessary
       if (directionsRenderer.current) {
         directionsRenderer.current.setDirections({ routes: [] });
       }
@@ -373,21 +391,22 @@ const DriverMaps = () => {
     assignedBins,
     calculateAndDisplayRoute,
   ]);
+
   useEffect(() => {
     console.log(
       "Effect: Update markers due to currentLegIndex change. State:",
       {
         currentLegIndex,
         directionsResultPresent: !!directionsResult,
-        mapReady: !!googleMapRef.current,
+        isMapInstanceReady,
       }
     );
     if (googleMapRef.current && directionsResult && isMapInstanceReady) {
-      // Check googleMapRef.current here
       addCustomMarkers(directionsResult);
     }
   }, [currentLegIndex, directionsResult, addCustomMarkers, isMapInstanceReady]);
 
+  // --- Navigation Controls ---
   // --- Navigation Controls ---
   const handleStartNavigation = () => {
     console.log("Start Navigation clicked.");
@@ -395,15 +414,19 @@ const DriverMaps = () => {
       calculateAndDisplayRoute();
     }
     setCurrentLegIndex(0);
-    if (googleMapRef.current && directionsResult?.routes[0]?.legs[0]) {
-      googleMapRef.current.panTo(
-        directionsResult.routes[0].legs[0].start_location
-      );
+    // Pan to the truck's location or the first destination
+    if (googleMapRef.current && driverTruck) {
+      const truckLocation =
+        driverTruck.t_latitude && driverTruck.t_longitude
+          ? { lat: driverTruck.t_latitude, lng: driverTruck.t_longitude }
+          : DEPOT_LOCATION; // Fallback to depot
+      googleMapRef.current.panTo(truckLocation);
       googleMapRef.current.setZoom(DEFAULT_ZOOM);
     }
   };
 
-  const handleNextDestination = () => {
+  const handleNextLeg = useCallback(() => {
+    // Corrected name
     console.log("Next Destination clicked. currentLegIndex:", currentLegIndex);
     if (
       directionsResult &&
@@ -411,7 +434,11 @@ const DriverMaps = () => {
       currentLegIndex < directionsResult.routes[0].legs.length - 1
     ) {
       setCurrentLegIndex((prev) => prev + 1);
-      if (googleMapRef.current) {
+      // Pan to the next destination
+      if (
+        googleMapRef.current &&
+        directionsResult.routes[0].legs[currentLegIndex + 1]
+      ) {
         googleMapRef.current.panTo(
           directionsResult.routes[0].legs[currentLegIndex + 1].start_location
         );
@@ -421,16 +448,21 @@ const DriverMaps = () => {
       console.log("End of route.");
       setError("Route completed!");
     }
-  };
+  }, [currentLegIndex, directionsResult]);
 
-  const handlePreviousDestination = () => {
+  const handlePreviousLeg = useCallback(() => {
+    // Corrected name
     console.log(
       "Previous Destination clicked. currentLegIndex:",
       currentLegIndex
     );
     if (currentLegIndex > 0) {
       setCurrentLegIndex((prev) => prev - 1);
-      if (googleMapRef.current) {
+      // Pan to the previous destination
+      if (
+        googleMapRef.current &&
+        directionsResult?.routes[0]?.legs[currentLegIndex - 1]
+      ) {
         googleMapRef.current.panTo(
           directionsResult.routes[0].legs[currentLegIndex - 1].start_location
         );
@@ -439,44 +471,28 @@ const DriverMaps = () => {
     } else {
       console.log("Already at the start of the route.");
     }
-  };
+  }, [currentLegIndex, directionsResult]);
 
   const currentLeg = directionsResult?.routes[0]?.legs[currentLegIndex];
-  const nextDestinationAddress = currentLeg?.end_address;
-  const nextDestinationBin = currentLeg
+  const nextDestinationAddress = currentLeg?.end_address || "N/A"; // Provide a default in case of null
+  /*   const nextDestinationBin = currentLeg
     ? assignedBins.find(
         (bin) =>
           bin.sb_latitude === currentLeg.end_location.lat() &&
           bin.sb_longitude === currentLeg.end_location.lng()
       )
     : null;
-
+ */
+  // Corrected logic for nextDestinationName
   let nextDestinationName = "N/A";
-  if (nextDestinationBin) {
-    nextDestinationName = `Bin ${nextDestinationBin.sb_id} (Seq: ${nextDestinationBin.sb_sequence})`;
-  } else if (
-    currentLegIndex === directionsResult?.routes[0]?.legs.length - 1 &&
-    assignedBins.length > 0
-  ) {
-    nextDestinationName = `Final Bin (${
-      assignedBins[assignedBins.length - 1]?.sb_id
-    })`;
-  } else if (
-    currentLegIndex === (directionsResult?.routes[0]?.legs.length || 0)
-  ) {
-    nextDestinationName = "Route Completed";
+  if (assignedBins.length > 0) {
+    if (currentLegIndex < assignedBins.length) {
+      // Target is the current bin at this index
+      nextDestinationName = `Bin ${assignedBins[currentLegIndex]?.sb_id}`;
+    } else {
+      nextDestinationName = "Route Completed"; // If index is beyond last bin
+    }
   }
-
-  console.log(
-    "DriverMaps component rendered for currentDriverId:",
-    currentDriverId,
-    "Loading:",
-    loading,
-    "Error:",
-    error,
-    "API Loaded:",
-    isGoogleApiLoaded
-  );
 
   if (loading) {
     return (
@@ -500,148 +516,206 @@ const DriverMaps = () => {
   }
 
   console.log("currentDriverId:", currentDriverId);
-  const libraries = ["geometry", "places", "marker"];
+
   return (
     <LoadScript
       googleMapsApiKey={"AIzaSyDr4f-WIYP4FsWF7RW-ElMHMvrB_nGNRNo"}
       onLoad={onGoogleApiLoadedFromLoadScript}
-      libraries={libraries}
+      libraries={googleMapsLibraries} // Use the constant defined outside
       loading="async"
     >
-      <div className="flex flex-col h-full p-4 bg-white rounded-lg shadow-md">
-        <h3 className="text-xl font-semibold mb-4 text-gray-800">
-          Driver Route Map: {driverTruck ? driverTruck.t_plate : "N/A"}
-          {driverTruck &&
-            driverTruck.driver_name &&
-            ` (${driverTruck.driver_name})`}
-        </h3>
+      {/* This is the main container for your split layout (left panel + right map) */}
+      <div style={CONTAINER_MAIN_STYLE} className="flex h-screen bg-white">
+        <div
+          style={LEFT_PANEL_STYLE}
+          className="custom-scroll flex flex-col space-y-4"
+        >
+          <h4 className="text-2xl font-semibold text-gray-800">
+            Driver Route Map:{" "}
+            <span className="text-blue-600">
+              {driverTruck ? driverTruck.t_plate : "N/A"}
+            </span>
+            {driverTruck?.driver_name && (
+              <span className="text-gray-600">
+                {" "}
+                ({driverTruck.driver_name})
+              </span>
+            )}
+          </h4>
 
-        <div className="flex-1 mb-4 relative">
-          {/* Use GoogleMap component here */}
-          <GoogleMap
-            mapContainerStyle={MAP_CONTAINER_STYLE}
-            center={DEPOT_LOCATION} // Initial center
-            zoom={DEFAULT_ZOOM} // Initial zoom
-            onLoad={onMapLoad} // Callback when the map instance is ready
-            onUnmount={onMapUnmount} // Optional: cleanup on unmount
-            options={{
-              mapTypeControl: false,
-              streetViewControl: false,
-              fullscreenControl: false,
-            }}
-          >
-            {/* Any other map components like Markers, Polylines would go here if not handled by DirectionsRenderer */}
-          </GoogleMap>
+          {!loading && !error && (
+            <div className="flex flex-col bg-white p-4 rounded-xl shadow-md ring-1 ring-gray-200 h-full">
+              <h4 className="text-xl font-bold mb-3 text-gray-800 border-b pb-1">
+                Current Navigation Status
+              </h4>
 
-          {!isGoogleApiLoaded && ( // Show loading overlay until LoadScript confirms API loaded
-            <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg z-10">
-              <div className="text-lg font-semibold text-gray-700">
-                Loading Map...
-              </div>
+              {directionsResult && currentLeg ? (
+                <>
+                  <div className="mb-4">
+                    <p className="text-lg font-medium text-gray-700">
+                      Next Destination:{" "}
+                      <span className="font-bold text-indigo-600">
+                        {nextDestinationName}
+                      </span>
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {nextDestinationAddress}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Distance: {currentLeg.distance?.text || "N/A"} | Time:{" "}
+                      {currentLeg.duration?.text || "N/A"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2 text-gray-800">
+                      Trip Instructions
+                    </h3>
+                    <ol className="trip-instructions list-decimal list-inside text-gray-700 pr-2 space-y-1">
+                      {currentLeg.steps?.length > 0 ? (
+                        currentLeg.steps.map((step, stepIndex) => (
+                          <li
+                            key={stepIndex}
+                            dangerouslySetInnerHTML={{
+                              __html: step.instructions
+                                .replace(/<b>/g, "<strong>")
+                                .replace(/<\/b>/g, "</strong>"),
+                            }}
+                          />
+                        ))
+                      ) : (
+                        <li>
+                          No detailed instructions available for this step.
+                        </li>
+                      )}
+                    </ol>
+                  </div>
+
+                  {/* Fixed Buttons */}
+                  <div className="fixed-nav-buttons">
+                    <Button
+                      onClick={handlePreviousLeg}
+                      disabled={currentLegIndex === 0}
+                      className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg disabled:opacity-50"
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      onClick={handleNextLeg}
+                      disabled={
+                        currentLegIndex >=
+                        directionsResult.routes[0].legs.length - 1
+                      }
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center mt-6">
+                  <p className="text-gray-500 mb-4">
+                    Click &quot;Start Navigation&quot; to begin your route.
+                  </p>
+                  <Button
+                    onClick={handleStartNavigation}
+                    disabled={
+                      loading ||
+                      !isGoogleApiLoaded ||
+                      !isMapInstanceReady ||
+                      !driverTruck ||
+                      assignedBins.length === 0 ||
+                      error
+                    }
+                    className="px-8 py-3 bg-green-500 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Start Navigation
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
-
-        <div className="bg-gray-100 p-4 rounded-lg shadow-inner mb-4">
-          <h2 className="text-xl font-semibold mb-2 text-gray-800">
-            Current Navigation Status
-          </h2>
-          {directionsResult && currentLeg ? (
-            <>
-              <p className="text-lg font-medium text-gray-700 mb-2">
-                Next Destination:{" "}
-                <span className="font-bold text-indigo-600">
-                  {nextDestinationName}
-                </span>
-                <br />
-                <span className="text-sm text-gray-500">
-                  {nextDestinationAddress}
-                </span>
-              </p>
-              <p className="text-md text-gray-600 mb-2">
-                Distance to next: {currentLeg.distance.text} | Time to next:{" "}
-                {currentLeg.duration.text}
-              </p>
-              <h3 className="text-lg font-semibold mt-4 mb-2 text-gray-800">
-                Instructions for this leg:
-              </h3>
-              <ul className="list-disc list-inside text-gray-700 max-h-40 overflow-y-auto custom-scroll">
-                {currentLeg.steps && currentLeg.steps.length > 0 ? (
-                  currentLeg.steps.map((step, index) => (
-                    <li
-                      key={index}
-                      dangerouslySetInnerHTML={{
-                        __html: step.instructions
-                          .replace(/<b>/g, "<strong>")
-                          .replace(/<\/b>/g, "</strong>"),
-                      }}
-                      className="mb-1"
-                    ></li>
-                  ))
-                ) : (
-                  <li>No detailed instructions available for this step.</li>
-                )}
-              </ul>
-              <div className="flex justify-between mt-4">
-                <button
-                  onClick={handlePreviousDestination}
-                  disabled={currentLegIndex === 0}
-                  className="px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
-                >
-                  Previous Destination
-                </button>
-                <button
-                  onClick={handleNextDestination}
-                  disabled={
-                    currentLegIndex >=
-                    directionsResult.routes[0].legs.length - 1
-                  }
-                  className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
-                >
-                  Next Destination
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="text-center">
-              <p className="text-gray-600 mb-4">
-                Click &quot;Start Navigation&quot; to begin your route.
-              </p>
-              <button
-                onClick={handleStartNavigation}
-                disabled={
-                  loading ||
-                  !isGoogleApiLoaded ||
-                  !isMapInstanceReady || // <--- USE THE NEW STATE VARIABLE HERE
-                  !driverTruck ||
-                  assignedBins.length === 0 ||
-                  error
-                }
-                className="px-8 py-4 bg-green-500 text-white font-bold text-xl rounded-lg shadow-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
-              >
-                Start Navigation
-              </button>
+        {/* Right Panel for the Google Map */}
+        <div style={MAP_PANEL_STYLE}>
+          {/* Show loading text *inside* the map panel if API is not loaded yet */}
+          {!isGoogleApiLoaded && (
+            <div className="flex justify-center items-center h-full bg-gray-100">
+              <p>Loading Google Maps API...</p>
             </div>
           )}
-        </div>
+          {/* Only render GoogleMap component when API is loaded */}
+          {isGoogleApiLoaded && (
+            <GoogleMap
+              mapContainerStyle={MAP_CONTAINER_STYLE}
+              center={
+                driverTruck?.t_latitude && driverTruck?.t_longitude // Use optional chaining for safety
+                  ? {
+                      lat: driverTruck.t_latitude,
+                      lng: driverTruck.t_longitude,
+                    }
+                  : DEPOT_LOCATION
+              }
+              zoom={DEFAULT_ZOOM}
+              onLoad={onMapLoad}
+              onUnmount={onMapUnmount}
+              options={{
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: false,
+                zoomControl: true,
+              }}
+            >
+              {/* Markers and DirectionsRenderer are handled by your functions */}
+            </GoogleMap>
+          )}
+        </div>{" "}
+        {/* End of Right Panel */}
+      </div>{" "}
+      {/* End of Main container for the split layout */}
+      {/* Your custom scrollbar styles (can be moved to a global CSS file) */}
+      <style>{`
+        .custom-scroll::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+          background: #888;
+          border-radius: 10px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+          background: #555;
+        }
+        
+        body {
+          overflow: hidden;
+        }
 
-        <style>{`
-          .custom-scroll::-webkit-scrollbar {
-            width: 8px;
-          }
-          .custom-scroll::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-          }
-          .custom-scroll::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 10px;
-          }
-          .custom-scroll::-webkit-scrollbar-thumb:hover {
-            background: #555;
-          }
-        `}</style>
-      </div>
+        /* Fix for trip instructions scroll section */
+        .trip-instructions {
+          max-height: 260px;
+          overflow-y: auto;
+          padding-right: 8px;
+        }
+
+        /* Sticky footer inside the left panel */
+        .fixed-nav-buttons {
+          position: sticky;
+          bottom: 0;
+          background: #ffffff;
+          padding-top: 12px;
+          padding-bottom: 12px;
+          margin-top: 12px;
+          border-top: 1px solid #e5e7eb;
+          display: flex;
+          justify-content: space-between;
+          z-index: 10;
+        }
+              
+              `}</style>
     </LoadScript>
   );
 };
