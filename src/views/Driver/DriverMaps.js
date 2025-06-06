@@ -1,50 +1,47 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { LoadScript } from "@react-google-maps/api";
+import { LoadScript, GoogleMap } from "@react-google-maps/api"; // Import GoogleMap
 import axios from "axios";
-import truckblue from "assets/img/truck-blue.png"; // Ensure these paths are correct relative to where DriverMap.js is
+import truckblue from "assets/img/truck-blue.png";
 import truckgreen from "assets/img/truck-green.png";
 
 // Constants
 const MAP_CONTAINER_STYLE = {
-  width: "85%",
+  width: "100%",
   height: "calc(100vh - 250px)",
   borderRadius: "8px",
   border: "1px solid #e2e8f0",
-  backgroundColor: "black",
 };
 
 const DEFAULT_ZOOM = 13;
-const DEPOT_LOCATION = { lat: 1.4234, lng: 103.6312 }; // Your depot location (e.g., your HQ)
+const DEPOT_LOCATION = { lat: 1.4234, lng: 103.6312 };
 
-// Custom icons for visual clarity
 const TRUCK_ICONS = {
   blue: truckblue,
   orange: truckgreen,
 };
 
 const BIN_ICONS = {
-  collected: "http://maps.google.com/mapfiles/ms/icons/green-dot.png", // Green dot for collected
-  missed: "http://maps.google.com/mapfiles/ms/icons/red-dot.png", // Red dot for missed/uncollected
-  active: "http://maps.google.com/mapfiles/ms/icons/orange-dot.png", // Orange dot for current active bin
-  default: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png", // Default for pending/other
+  collected: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+  missed: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+  active: "http://maps.google.com/mapfiles/ms/icons/orange-dot.png",
+  default: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
 };
 
 const DriverMaps = () => {
   const currentDriverId = parseInt(localStorage.getItem("userId"));
-  const mapDivRef = useRef(null); // Ref for the map container HTML element
-  const googleMap = useRef(null); // Ref for the Google Map instance
-  const directionsService = useRef(null); // Ref for DirectionsService
-  const directionsRenderer = useRef(null); // Ref for DirectionsRenderer
-  const markers = useRef([]); // Ref to keep track of custom markers
-
-  // State variables
+  // const mapDivRef = useRef(null); // No longer directly needed for map init with GoogleMap component
+  const googleMapRef = useRef(null); // Ref for the GoogleMap component's map instance
+  const directionsService = useRef(null);
+  const directionsRenderer = useRef(null);
+  const markers = useRef([]);
+  const [isMapInstanceReady, setIsMapInstanceReady] = useState(false);
   const [driverTruck, setDriverTruck] = useState(null);
   const [assignedBins, setAssignedBins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isGoogleApiLoaded, setIsGoogleApiLoaded] = useState(false);
-  const [directionsResult, setDirectionsResult] = useState(null); // Stores the full directions response
-  const [currentLegIndex, setCurrentLegIndex] = useState(0); // Tracks the current navigation leg
+  const [directionsResult, setDirectionsResult] = useState(null);
+  const [currentLegIndex, setCurrentLegIndex] = useState(0);
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -52,9 +49,8 @@ const DriverMaps = () => {
       setLoading(true);
       setError(null);
       try {
-        // CHANGE THIS LINE: Fetch trucks from an appropriate endpoint
         const [trucksRes, smartbinsRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/trucks"), // <--- Change this to your trucks endpoint
+          axios.get("http://localhost:5000/api/trucks"),
           axios.get("http://localhost:5000/api/smartbins"),
         ]);
 
@@ -94,186 +90,273 @@ const DriverMaps = () => {
       }
     };
 
-    // Ensure currentDriverId is valid before fetching
     if (currentDriverId) {
       fetchData();
     } else {
       setLoading(false);
       setError("No valid driver ID provided to the map component.");
     }
-  }, [currentDriverId]); // Depend on currentDriverId
+  }, [currentDriverId]);
 
-  // --- Map Initialization and Directions Service Setup ---
-  const onGoogleApiLoad = useCallback(() => {
-    console.log("onGoogleApiLoad triggered.");
-    if (window.google && mapDivRef.current) {
-      console.log("window.google and mapDivRef.current are available.");
-      googleMap.current = new window.google.maps.Map(mapDivRef.current, {
-        center: DEPOT_LOCATION,
-        zoom: DEFAULT_ZOOM,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
-      });
-      console.log("Google Map instance created:", googleMap.current); // Check if this logs a map object
+  // --- Google Maps API Loading & Map Initialization ---
+  // onLoad callback for LoadScript to confirm API is loaded (optional, but good for state)
+  const onGoogleApiLoadedFromLoadScript = useCallback(() => {
+    console.log("Google Maps API script loaded via LoadScript.");
+    setIsGoogleApiLoaded(true);
+  }, []);
 
-      directionsService.current = new window.google.maps.DirectionsService();
-      directionsRenderer.current = new window.google.maps.DirectionsRenderer({
-        map: googleMap.current,
-        suppressMarkers: true,
-        polylineOptions: {
-          strokeColor: "#4285F4",
-          strokeOpacity: 0.8,
-          strokeWeight: 6,
-        },
-      });
-      setIsGoogleApiLoaded(true);
-      console.log("Google Map and services initialized successfully.");
-    } else {
-      console.error(
-        "Failed to initialize map: window.google or mapDivRef.current not ready."
-      );
+  // onLoad callback for GoogleMap component to get the map instance
+  const onMapLoad = useCallback((map) => {
+    googleMapRef.current = map; // Store the map instance
+    console.log(
+      "GoogleMap component loaded. Map instance:",
+      googleMapRef.current
+    );
+
+    // Initialize DirectionsService and DirectionsRenderer here
+    directionsService.current = new window.google.maps.DirectionsService();
+    directionsRenderer.current = new window.google.maps.DirectionsRenderer({
+      map: googleMapRef.current, // Pass the map instance
+      suppressMarkers: true,
+      polylineOptions: {
+        strokeColor: "#4285F4",
+        strokeOpacity: 0.8,
+        strokeWeight: 6,
+      },
+    });
+    console.log("Directions Service and Renderer initialized.");
+    setIsMapInstanceReady(true);
+  }, []);
+
+  const onMapUnmount = useCallback(() => {
+    if (directionsRenderer.current) {
+      directionsRenderer.current.setMap(null);
     }
+    markers.current.forEach((marker) => marker.setMap(null));
+    markers.current = [];
+    googleMapRef.current = null;
+    directionsService.current = null;
+    directionsRenderer.current = null;
+    setIsGoogleApiLoaded(false); // Reset API loaded state on unmount
+    setIsMapInstanceReady(false);
+    console.log("Map unmounted and resources cleared.");
   }, []);
 
   // --- Route Calculation and Display ---
   const calculateAndDisplayRoute = useCallback(() => {
-    console.log("calculateAndDisplayRoute called. State:", {
+    console.log("calculateAndDisplayRoute called. Current state:", {
       isGoogleApiLoaded,
       driverTruck,
       assignedBinsLength: assignedBins.length,
+      isMapInstanceReady,
+      directionsServiceReady: !!directionsService.current,
+      directionsRendererReady: !!directionsRenderer.current,
     });
+
     if (
       !isGoogleApiLoaded ||
+      !isMapInstanceReady ||
       !directionsService.current ||
       !directionsRenderer.current ||
       !driverTruck ||
       assignedBins.length === 0
     ) {
+      if (directionsRenderer.current) {
+        directionsRenderer.current.setDirections({ routes: [] });
+      }
+      markers.current.forEach((marker) => marker.setMap(null));
+      markers.current = [];
+      setDirectionsResult(null);
+      setCurrentLegIndex(0);
       console.warn(
         "Skipping route calculation: prerequisites not met. Details:",
         {
           isGoogleApiLoaded,
+          isMapInstanceReady,
           directionsServiceReady: !!directionsService.current,
           directionsRendererReady: !!directionsRenderer.current,
           driverTruckPresent: !!driverTruck,
           assignedBinsCount: assignedBins.length,
         }
       );
-      // ... (rest of the early exit logic)
       return;
     }
-    // ... rest of your route calculation logic
+
+    markers.current.forEach((marker) => marker.setMap(null));
+    markers.current = [];
+
+    // Ensure truck coordinates are available, otherwise use depot as origin
+    const origin =
+      driverTruck.t_latitude && driverTruck.t_longitude
+        ? { lat: driverTruck.t_latitude, lng: driverTruck.t_longitude }
+        : DEPOT_LOCATION;
+
+    const waypoints = assignedBins
+      .slice(0, assignedBins.length - 1)
+      .map((bin) => ({
+        location: { lat: bin.sb_latitude, lng: bin.sb_longitude },
+        stopover: true,
+      }));
+
+    const destinationBin = assignedBins[assignedBins.length - 1];
+    if (!destinationBin) {
+      console.error("No destination bin found for route calculation.");
+      setError("Cannot calculate route: No destination bin.");
+      return;
+    }
+    const destination = {
+      lat: destinationBin.sb_latitude,
+      lng: destinationBin.sb_longitude,
+    };
+
+    console.log("Route Request:", { origin, waypoints, destination });
+
     directionsService.current.route(
-      // ... route options
+      {
+        origin: origin,
+        destination: destination,
+        waypoints: waypoints,
+        optimizeWaypoints: false,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
       (response, status) => {
         console.log("Directions Service Response Status:", status);
         if (status === "OK" && response) {
           console.log("Directions successful. Route response:", response);
-          // ...
+          directionsRenderer.current.setDirections(response);
+          setDirectionsResult(response);
+          setCurrentLegIndex(0);
+          addCustomMarkers(response);
+          if (googleMapRef.current) {
+            googleMapRef.current.fitBounds(response.routes[0].bounds);
+          }
         } else {
-          console.error(`Directions request failed: ${status}`, response);
-          // ...
+          setError(`Directions request failed: ${status}`);
+          console.error("Directions request failed:", status, response);
+          setDirectionsResult(null);
+          directionsRenderer.current.setDirections({ routes: [] });
         }
       }
     );
-  }, [isGoogleApiLoaded, driverTruck, assignedBins]);
+  }, [isGoogleApiLoaded, isMapInstanceReady, driverTruck, assignedBins]);
+
   // Add custom markers for depot, bins, and current truck position
   const addCustomMarkers = useCallback(
     (response) => {
-      if (!googleMap.current || !response) return;
+      console.log("addCustomMarkers called. Response present:", !!response);
+      if (!googleMapRef.current || !response) {
+        // Use googleMapRef.current
+        console.warn("Skipping marker addition: map or response not ready.");
+        return;
+      }
 
-      // Clear existing markers
       markers.current.forEach((marker) => marker.setMap(null));
       markers.current = [];
 
       const route = response.routes[0];
-      const legs = route.legs;
+      if (!route || !route.legs) {
+        console.warn(
+          "No route or legs found in directions response for markers."
+        );
+        return;
+      }
 
-      // Add Depot Marker (Origin if truck starts there)
       const depotMarker = new window.google.maps.Marker({
         position: DEPOT_LOCATION,
-        map: googleMap.current,
+        map: googleMapRef.current, // Use googleMapRef.current
         icon: {
-          url: BIN_ICONS.default, // Using a default blue dot for depot
+          url: BIN_ICONS.default,
           scaledSize: new window.google.maps.Size(32, 32),
         },
         title: "Depot (Start Location)",
       });
       markers.current.push(depotMarker);
 
-      // Add Bin Markers
       assignedBins.forEach((bin, index) => {
-        // Determine icon based on bin status and current leg
-        let binIconUrl = BIN_ICONS.default; // Default icon
+        let binIconUrl = BIN_ICONS.default;
         if (bin.sb_status === "Collected") {
           binIconUrl = BIN_ICONS.collected;
         } else if (bin.sb_status === "Missed") {
           binIconUrl = BIN_ICONS.missed;
         }
 
-        // Highlight the current active destination bin
-        if (currentLegIndex < legs.length) {
-          const nextBinLocation = legs[currentLegIndex].end_location;
-          if (
-            bin.sb_latitude === nextBinLocation.lat() &&
-            bin.sb_longitude === nextBinLocation.lng()
-          ) {
-            binIconUrl = BIN_ICONS.active; // Use active icon for next destination
-          }
+        // Highlight the current active destination bin based on sequence
+        // Note: This logic assumes bin.sb_sequence matches leg index + 1 for intermediate bins
+        // or matches the last bin for the final destination.
+        // You might need to adjust this if your sequence numbers don't perfectly map to legs.
+        if (
+          currentLegIndex < assignedBins.length &&
+          index === currentLegIndex
+        ) {
+          binIconUrl = BIN_ICONS.active;
         }
 
         const marker = new window.google.maps.Marker({
-          position: { lat: bin.sb_latitude, lng: bin.sb_longitude }, // Use sb_latitude/sb_longitude
-          map: googleMap.current,
+          position: { lat: bin.sb_latitude, lng: bin.sb_longitude },
+          map: googleMapRef.current, // Use googleMapRef.current
           icon: {
             url: binIconUrl,
             scaledSize: new window.google.maps.Size(32, 32),
           },
           title: `Bin ID: ${bin.sb_id}\nStatus: ${bin.sb_status}\nSequence: ${bin.sb_sequence}`,
           label: {
-            text: String(index + 1), // Label with sequence number
+            text: String(index + 1),
             color: "white",
             fontWeight: "bold",
           },
           zIndex:
             binIconUrl === BIN_ICONS.active
               ? window.google.maps.Marker.MAX_ZINDEX + 1
-              : window.google.maps.Marker.MAX_ZINDEX, // Bring active to front
+              : window.google.maps.Marker.MAX_ZINDEX,
         });
         markers.current.push(marker);
       });
 
-      // Add a dynamic truck marker
       if (driverTruck) {
-        // Truck's current actual position from backend or assume start of current leg
         const truckPosition =
           driverTruck.t_latitude && driverTruck.t_longitude
             ? { lat: driverTruck.t_latitude, lng: driverTruck.t_longitude }
-            : legs[currentLegIndex]?.start_location || DEPOT_LOCATION;
+            : (currentLeg && currentLeg.start_location) || DEPOT_LOCATION; // Fallback to current leg start or depot
 
         const truckMarker = new window.google.maps.Marker({
           position: truckPosition,
-          map: googleMap.current,
+          map: googleMapRef.current, // Use googleMapRef.current
           icon: {
-            url: driverTruck.t_id === 1 ? TRUCK_ICONS.blue : TRUCK_ICONS.orange, // Choose icon based on truck ID
+            url: driverTruck.t_id === 1 ? TRUCK_ICONS.blue : TRUCK_ICONS.orange,
             scaledSize: new window.google.maps.Size(50, 30),
           },
           title: `Your Truck: ${driverTruck.t_plate}`,
-          zIndex: window.google.maps.Marker.MAX_ZINDEX + 2, // Ensure truck is always on top
+          zIndex: window.google.maps.Marker.MAX_ZINDEX + 2,
         });
         markers.current.push(truckMarker);
       }
     },
-    [assignedBins, currentLegIndex, driverTruck, isGoogleApiLoaded] // isGoogleApiLoaded is needed here if icons depend on it
+    [assignedBins, currentLegIndex, driverTruck] // isGoogleApiLoaded no longer needed here as a direct dependency
   );
 
   // Effect to recalculate and display route when data is loaded
+  // Effect to recalculate and display route when data is loaded
   useEffect(() => {
-    if (isGoogleApiLoaded && driverTruck && assignedBins.length > 0) {
+    console.log("Effect: Check for route calculation trigger. State:", {
+      isGoogleApiLoaded,
+      isMapInstanceReady,
+      driverTruckPresent: !!driverTruck,
+      assignedBinsCount: assignedBins.length,
+    });
+    // Ensure both Google Maps API is loaded AND the GoogleMap component has rendered and provided a map instance
+    // AND we have truck/bins data.
+    if (
+      isGoogleApiLoaded &&
+      isMapInstanceReady &&
+      driverTruck &&
+      assignedBins.length > 0
+    ) {
+      console.log(
+        "All conditions met for route calculation. Calling calculateAndDisplayRoute."
+      );
       calculateAndDisplayRoute();
     } else if (isGoogleApiLoaded && driverTruck && assignedBins.length === 0) {
-      // If truck assigned but no bins, clear route and markers
+      // If API loaded, truck present but no bins, clear map if necessary
       if (directionsRenderer.current) {
         directionsRenderer.current.setDirections({ routes: [] });
       }
@@ -281,61 +364,77 @@ const DriverMaps = () => {
       markers.current = [];
       setDirectionsResult(null);
       setError("No bins assigned for this truck's route.");
+      console.warn("No bins assigned for this truck, clearing map/route.");
     }
-  }, [isGoogleApiLoaded, driverTruck, assignedBins, calculateAndDisplayRoute]);
-
-  // Effect to update markers when currentLegIndex changes (for animation/highlighting)
+  }, [
+    isGoogleApiLoaded,
+    isMapInstanceReady,
+    driverTruck,
+    assignedBins,
+    calculateAndDisplayRoute,
+  ]);
   useEffect(() => {
-    if (googleMap.current && directionsResult && isGoogleApiLoaded) {
+    console.log(
+      "Effect: Update markers due to currentLegIndex change. State:",
+      {
+        currentLegIndex,
+        directionsResultPresent: !!directionsResult,
+        mapReady: !!googleMapRef.current,
+      }
+    );
+    if (googleMapRef.current && directionsResult && isMapInstanceReady) {
+      // Check googleMapRef.current here
       addCustomMarkers(directionsResult);
     }
-  }, [currentLegIndex, directionsResult, addCustomMarkers, isGoogleApiLoaded]); // Added isGoogleApiLoaded to dependencies
+  }, [currentLegIndex, directionsResult, addCustomMarkers, isMapInstanceReady]);
 
   // --- Navigation Controls ---
   const handleStartNavigation = () => {
-    // If route not yet calculated, calculate it
+    console.log("Start Navigation clicked.");
     if (!directionsResult && driverTruck && assignedBins.length > 0) {
       calculateAndDisplayRoute();
     }
-    // Ensure currentLegIndex is at the start
     setCurrentLegIndex(0);
-    if (googleMap.current && directionsResult?.routes[0]?.legs[0]) {
-      googleMap.current.panTo(
+    if (googleMapRef.current && directionsResult?.routes[0]?.legs[0]) {
+      googleMapRef.current.panTo(
         directionsResult.routes[0].legs[0].start_location
       );
-      googleMap.current.setZoom(DEFAULT_ZOOM); // Reset zoom for new leg
+      googleMapRef.current.setZoom(DEFAULT_ZOOM);
     }
   };
 
   const handleNextDestination = () => {
+    console.log("Next Destination clicked. currentLegIndex:", currentLegIndex);
     if (
       directionsResult &&
       directionsResult.routes[0] &&
       currentLegIndex < directionsResult.routes[0].legs.length - 1
     ) {
       setCurrentLegIndex((prev) => prev + 1);
-      // Pan to the start of the next leg for better navigation context
-      if (googleMap.current) {
-        googleMap.current.panTo(
+      if (googleMapRef.current) {
+        googleMapRef.current.panTo(
           directionsResult.routes[0].legs[currentLegIndex + 1].start_location
         );
-        googleMap.current.setZoom(DEFAULT_ZOOM); // Reset zoom for new leg
+        googleMapRef.current.setZoom(DEFAULT_ZOOM);
       }
     } else {
       console.log("End of route.");
-      setError("Route completed!"); // Indicate completion
+      setError("Route completed!");
     }
   };
 
   const handlePreviousDestination = () => {
+    console.log(
+      "Previous Destination clicked. currentLegIndex:",
+      currentLegIndex
+    );
     if (currentLegIndex > 0) {
       setCurrentLegIndex((prev) => prev - 1);
-      // Pan to the start of the previous leg
-      if (googleMap.current) {
-        googleMap.current.panTo(
+      if (googleMapRef.current) {
+        googleMapRef.current.panTo(
           directionsResult.routes[0].legs[currentLegIndex - 1].start_location
         );
-        googleMap.current.setZoom(DEFAULT_ZOOM); // Reset zoom
+        googleMapRef.current.setZoom(DEFAULT_ZOOM);
       }
     } else {
       console.log("Already at the start of the route.");
@@ -347,12 +446,11 @@ const DriverMaps = () => {
   const nextDestinationBin = currentLeg
     ? assignedBins.find(
         (bin) =>
-          bin.sb_latitude === currentLeg.end_location.lat() && // Use sb_latitude/sb_longitude
+          bin.sb_latitude === currentLeg.end_location.lat() &&
           bin.sb_longitude === currentLeg.end_location.lng()
       )
     : null;
 
-  // Determine the name of the next destination
   let nextDestinationName = "N/A";
   if (nextDestinationBin) {
     nextDestinationName = `Bin ${nextDestinationBin.sb_id} (Seq: ${nextDestinationBin.sb_sequence})`;
@@ -360,20 +458,24 @@ const DriverMaps = () => {
     currentLegIndex === directionsResult?.routes[0]?.legs.length - 1 &&
     assignedBins.length > 0
   ) {
-    // This handles the very last leg, which might be back to depot
     nextDestinationName = `Final Bin (${
       assignedBins[assignedBins.length - 1]?.sb_id
     })`;
   } else if (
     currentLegIndex === (directionsResult?.routes[0]?.legs.length || 0)
   ) {
-    // If beyond the last leg, indicates route completion or return to depot
     nextDestinationName = "Route Completed";
   }
 
   console.log(
     "DriverMaps component rendered for currentDriverId:",
-    currentDriverId
+    currentDriverId,
+    "Loading:",
+    loading,
+    "Error:",
+    error,
+    "API Loaded:",
+    isGoogleApiLoaded
   );
 
   if (loading) {
@@ -385,8 +487,6 @@ const DriverMaps = () => {
   }
 
   if (error && (!directionsResult || assignedBins.length === 0)) {
-    // Only show error if no directions were found AND there are no bins OR data fetching failed.
-    // This prevents showing an error immediately if bins are fetched but route is still calculating.
     return (
       <div className="flex flex-col items-center justify-center h-screen text-red-600">
         <p className="text-lg font-semibold">Error:</p>
@@ -400,13 +500,13 @@ const DriverMaps = () => {
   }
 
   console.log("currentDriverId:", currentDriverId);
-
+  const libraries = ["geometry", "places", "marker"];
   return (
-    // LoadScript manages the Google Maps API script loading
     <LoadScript
       googleMapsApiKey={"AIzaSyDr4f-WIYP4FsWF7RW-ElMHMvrB_nGNRNo"}
-      onLoad={onGoogleApiLoad}
-      libraries={["geometry", "places", "marker"]}
+      onLoad={onGoogleApiLoadedFromLoadScript}
+      libraries={libraries}
+      loading="async"
     >
       <div className="flex flex-col h-full p-4 bg-white rounded-lg shadow-md">
         <h3 className="text-xl font-semibold mb-4 text-gray-800">
@@ -417,8 +517,23 @@ const DriverMaps = () => {
         </h3>
 
         <div className="flex-1 mb-4 relative">
-          <div ref={mapDivRef} style={MAP_CONTAINER_STYLE}></div>
-          {!isGoogleApiLoaded && (
+          {/* Use GoogleMap component here */}
+          <GoogleMap
+            mapContainerStyle={MAP_CONTAINER_STYLE}
+            center={DEPOT_LOCATION} // Initial center
+            zoom={DEFAULT_ZOOM} // Initial zoom
+            onLoad={onMapLoad} // Callback when the map instance is ready
+            onUnmount={onMapUnmount} // Optional: cleanup on unmount
+            options={{
+              mapTypeControl: false,
+              streetViewControl: false,
+              fullscreenControl: false,
+            }}
+          >
+            {/* Any other map components like Markers, Polylines would go here if not handled by DirectionsRenderer */}
+          </GoogleMap>
+
+          {!isGoogleApiLoaded && ( // Show loading overlay until LoadScript confirms API loaded
             <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg z-10">
               <div className="text-lg font-semibold text-gray-700">
                 Loading Map...
@@ -455,7 +570,6 @@ const DriverMaps = () => {
                   currentLeg.steps.map((step, index) => (
                     <li
                       key={index}
-                      // Clean up instructions for display: replace bold tags
                       dangerouslySetInnerHTML={{
                         __html: step.instructions
                           .replace(/<b>/g, "<strong>")
@@ -498,9 +612,10 @@ const DriverMaps = () => {
                 disabled={
                   loading ||
                   !isGoogleApiLoaded ||
+                  !isMapInstanceReady || // <--- USE THE NEW STATE VARIABLE HERE
                   !driverTruck ||
                   assignedBins.length === 0 ||
-                  error // Disable if there's an error preventing route calc
+                  error
                 }
                 className="px-8 py-4 bg-green-500 text-white font-bold text-xl rounded-lg shadow-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
               >
@@ -510,7 +625,6 @@ const DriverMaps = () => {
           )}
         </div>
 
-        {/* Custom Scrollbar CSS (can be moved to a global CSS file) */}
         <style>{`
           .custom-scroll::-webkit-scrollbar {
             width: 8px;
