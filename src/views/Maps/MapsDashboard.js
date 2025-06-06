@@ -100,7 +100,6 @@ const Maps = () => {
   // Route calculation
   const calculateRoutes = useCallback(() => {
     if (!map || !directionsService.current || !isApiLoaded) {
-      // Ensure API is loaded before calculating routes
       return;
     }
 
@@ -181,7 +180,6 @@ const Maps = () => {
           const path = routes[truckId];
           if (!path || step >= path.length) {
             clearInterval(intervalRefs.current[truckId]);
-            // Optional: reset truck to the end of the route or depot after completion
             if (path && path.length > 0) {
               return { ...prev, [truckId]: path[path.length - 1] };
             }
@@ -189,7 +187,7 @@ const Maps = () => {
           }
           return { ...prev, [truckId]: path[step++] };
         });
-      }, 300);
+      }, 1000);
     });
   }, [isPlaying, routes, selectedTruckId, trucks, isApiLoaded]);
 
@@ -256,7 +254,7 @@ const Maps = () => {
         zoom={DEFAULT_ZOOM}
         onLoad={setMap}
         options={{
-          gestureHandling: "cooperative", // or 'cooperative'
+          gestureHandling: "cooperative",
           scrollwheel: false, // allow zooming via scroll
         }}
       >
@@ -274,35 +272,6 @@ const Maps = () => {
                 }}
               />
             )}
-
-            {/* If using AdvancedMarkerElement, it would look something like this:
-            {isApiLoaded && (
-              <AdvancedMarker
-                position={positions[truck.t_id] || DEPOT_LOCATION}
-                title={`Truck: ${truck.t_plate}\nDriver: ${truck.driverName}`}
-              >
-                <Pin
-                  background={
-                    truck.t_id === 1 ? "#3366FF" : "#FF9900"
-                  }
-                  borderColor={
-                    truck.t_id === 1 ? "#1a3366" : "#b36b00"
-                  }
-                  glyphColor={"#fff"}
-                >
-                  <img
-                    src={
-                      truck.t_id === 1
-                        ? TRUCK_ICONS.blue
-                        : TRUCK_ICONS.orange
-                    }
-                    alt="truck icon"
-                    style={{ width: "30px", height: "auto" }}
-                  />
-                </Pin>
-              </AdvancedMarker>
-            )}
-            */}
 
             {/* Route Polyline */}
             {routes[truck.t_id]?.length > 0 && (

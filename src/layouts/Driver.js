@@ -1,28 +1,22 @@
 import React from "react";
 import { Switch, Route, Redirect } from "react-router-dom";
-// creates a beautiful scrollbar
 import PerfectScrollbar from "perfect-scrollbar";
 import "perfect-scrollbar/css/perfect-scrollbar.css";
-// @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
-// core components
 import Navbar from "components/Navbars/Navbar.js";
 import Footer from "components/Footer/Footer.js";
 import Sidebar from "components/Sidebar/Sidebar.js";
 import FixedPlugin from "components/FixedPlugin/FixedPlugin.js";
-
-import routes from "routes.js";
+import routes from "driversroutes";
 import styles from "assets/jss/material-dashboard-react/layouts/adminStyle.js";
 import bgImage from "assets/img/sidebar-2.jpg";
 import logo from "assets/img/logo.png";
 
 let ps;
 
-// This constant defines the routes to be rendered within the Driver layout's main panel
 const switchRoutes = (
   <Switch>
     {routes.map((prop, key) => {
-      // ONLY render routes that have layout: "/driver"
       if (prop.layout === "/driver") {
         return (
           <Route
@@ -34,7 +28,6 @@ const switchRoutes = (
       }
       return null;
     })}
-    {/* Default redirect for the /driver layout to /driver/map */}
     <Redirect from="/driver" to="/driver/map" />
   </Switch>
 );
@@ -69,10 +62,8 @@ export default function Driver({ ...rest }) {
     setMobileOpen(!mobileOpen);
   };
 
-  // Adjusted getRoute logic for the driver map
-  // This function determines if the map should be full screen (without padding)
   const getRoute = () => {
-    return window.location.pathname !== "/driver/map"; // True if not on /driver/map
+    return window.location.pathname !== "/driver/report";
   };
 
   const resizeFunction = () => {
@@ -81,7 +72,6 @@ export default function Driver({ ...rest }) {
     }
   };
 
-  // initialize and destroy the PerfectScrollbar plugin
   React.useEffect(() => {
     if (navigator.platform.indexOf("Win") > -1) {
       ps = new PerfectScrollbar(mainPanel.current, {
@@ -103,8 +93,8 @@ export default function Driver({ ...rest }) {
   return (
     <div className={classes.wrapper}>
       <Sidebar
-        routes={routes.filter((route) => route.layout === "/driver")} // Filter routes for the driver sidebar
-        logoText={"Smartbin Driver"} // Custom logo text for driver
+        routes={routes.filter((route) => route.layout === "/driver")}
+        logoText={"Smartbin Driver"}
         logo={logo}
         image={image}
         handleDrawerToggle={handleDrawerToggle}
@@ -114,7 +104,7 @@ export default function Driver({ ...rest }) {
       />
       <div className={classes.mainPanel} ref={mainPanel}>
         <Navbar
-          routes={routes.filter((route) => route.layout === "/driver")} // Filter routes for Navbar to get brand text
+          routes={routes.filter((route) => route.layout === "/driver")}
           handleDrawerToggle={handleDrawerToggle}
           {...rest}
         />

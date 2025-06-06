@@ -22,12 +22,14 @@ const LoginPage = () => {
       });
 
       if (response.data.success) {
+        console.log("Login response data:", response.data);
         const roleId = response.data.role_id;
 
         // Save user role and logged-in status
         localStorage.setItem("role_id", roleId);
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("username", u_name);
+        localStorage.setItem("userId", response.data.u_id);
         localStorage.setItem("sessionExpiry", expiryTime); // optionally save username
 
         if (roleId === 1) history.push("/admin/dashboard");

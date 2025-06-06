@@ -37,10 +37,10 @@ app.post("/api/login", async (req, res) => {
     const connection = await mysql.createConnection(dbConfig);
 
     const [rows] = await connection.execute(
-      `SELECT u.u_name, u.u_password, r.role_id, r.role_name
-       FROM tb_user u
-       JOIN tb_role r ON u.role_id = r.role_id
-       WHERE u.u_name = ? AND u.u_password = ?`,
+      `SELECT tb_user.u_id, tb_user.role_id, tb_role.role_name 
+      FROM tb_user 
+      JOIN tb_role ON tb_user.role_id = tb_role.role_id 
+      WHERE tb_user.u_name = ? AND tb_user.u_password = ?`,
       [u_name, u_password]
     );
 
@@ -50,6 +50,7 @@ app.post("/api/login", async (req, res) => {
       res.json({
         success: true,
         role_id: rows[0].role_id,
+        u_id: rows[0].u_id,
         role_name: rows[0].role_name,
       });
     } else {
@@ -276,8 +277,16 @@ app.get("/api/roles", async (req, res) => {
 app.post("/api/users", async (req, res) => {
   console.log("POST /api/users body:", req.body);
 
-  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password } =
-    req.body;
+  const {
+    u_name,
+    u_street,
+    u_postcode,
+    u_city,
+    u_state,
+    u_country,
+    role_id,
+    u_password,
+  } = req.body;
 
   if (
     !u_name ||
@@ -297,7 +306,16 @@ app.post("/api/users", async (req, res) => {
     const [result] = await connection.execute(
       `INSERT INTO tb_user (u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password]
+      [
+        u_name,
+        u_street,
+        u_postcode,
+        u_city,
+        u_state,
+        u_country,
+        role_id,
+        u_password,
+      ]
     );
     await connection.end();
 
@@ -313,8 +331,16 @@ app.post("/api/users", async (req, res) => {
 
 // UPDATE a user
 app.put("/api/users/:id", async (req, res) => {
-  const { u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password} =
-    req.body;
+  const {
+    u_name,
+    u_street,
+    u_postcode,
+    u_city,
+    u_state,
+    u_country,
+    role_id,
+    u_password,
+  } = req.body;
   try {
     const connection = await mysql.createConnection(dbConfig);
     await connection.execute(
