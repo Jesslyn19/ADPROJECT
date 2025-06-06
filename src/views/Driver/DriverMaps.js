@@ -27,7 +27,6 @@ const LEFT_PANEL_STYLE = {
   padding: "24px",
   borderRight: "1px solid #e5e7eb",
   boxShadow: "6px 0 15px rgba(0, 0, 0, 0.05)",
-  overflowY: "auto",
   zIndex: 20,
   borderRadius: "0 16px 16px 0",
   fontFamily: "'Inter', sans-serif",
@@ -526,130 +525,161 @@ const DriverMaps = () => {
     >
       {/* This is the main container for your split layout (left panel + right map) */}
       <div style={CONTAINER_MAIN_STYLE} className="flex h-screen bg-white">
-        <div
-          style={LEFT_PANEL_STYLE}
-          className="custom-scroll flex flex-col space-y-4"
-        >
-          <h4 className="text-2xl font-semibold text-gray-800">
-            Driver Route Map:{" "}
-            <span className="text-blue-600">
-              {driverTruck ? driverTruck.t_plate : "N/A"}
-            </span>
-            {driverTruck?.driver_name && (
-              <span className="text-gray-600">
-                {" "}
-                ({driverTruck.driver_name})
+        {/* START OF LEFT PANEL */}
+        {/* This is the container for all left-side content. It's a flex column filling the screen height. */}
+        {/* The h-screen is CRITICAL here so flex-1 can calculate its height */}
+        <div style={LEFT_PANEL_STYLE} className="flex flex-col h-screen">
+          {/* 1. FIXED HEADER SECTION (DRIVER INFO) */}
+          {/* This part will always stay at the top of the left panel. */}
+          {/* Adjusted padding slightly to avoid double padding with LEFT_PANEL_STYLE's padding */}
+          <div className="pt-0 pb-2 px-0">
+            {" "}
+            {/* Removed specific p-4 pb-2 here, relies on LEFT_PANEL_STYLE padding */}
+            <h4 className="text-2xl font-semibold text-gray-800">
+              Driver Route Map:{" "}
+              <span className="text-blue-600">
+                {driverTruck ? driverTruck.t_plate : "N/A"}
               </span>
-            )}
-          </h4>
-
-          {!loading && !error && (
-            <div className="flex flex-col bg-white p-4 rounded-xl shadow-md ring-1 ring-gray-200 h-full">
-              <h4 className="text-xl font-bold mb-3 text-gray-800 border-b pb-1">
-                Current Navigation Status
-              </h4>
-
-              {directionsResult && currentLeg ? (
-                <>
-                  <div className="mb-4">
-                    <p className="text-lg font-medium text-gray-700">
-                      Next Destination:{" "}
-                      <span className="font-bold text-indigo-600">
-                        {nextDestinationName}
-                      </span>
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {nextDestinationAddress}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Distance: {currentLeg.distance?.text || "N/A"} | Time:{" "}
-                      {currentLeg.duration?.text || "N/A"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2 text-gray-800">
-                      Trip Instructions
-                    </h3>
-                    <ol className="trip-instructions list-decimal list-inside text-gray-700 pr-2 space-y-1">
-                      {currentLeg.steps?.length > 0 ? (
-                        currentLeg.steps.map((step, stepIndex) => (
-                          <li
-                            key={stepIndex}
-                            dangerouslySetInnerHTML={{
-                              __html: step.instructions
-                                .replace(/<b>/g, "<strong>")
-                                .replace(/<\/b>/g, "</strong>"),
-                            }}
-                          />
-                        ))
-                      ) : (
-                        <li>
-                          No detailed instructions available for this step.
-                        </li>
-                      )}
-                    </ol>
-                  </div>
-
-                  {/* Fixed Buttons */}
-                  <div className="fixed-nav-buttons">
-                    <Button
-                      onClick={handlePreviousLeg}
-                      disabled={currentLegIndex === 0}
-                      className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg disabled:opacity-50"
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      onClick={handleNextLeg}
-                      disabled={
-                        currentLegIndex >=
-                        directionsResult.routes[0].legs.length - 1
-                      }
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center mt-6">
-                  <p className="text-gray-500 mb-4">
-                    Click &quot;Start Navigation&quot; to begin your route.
-                  </p>
-                  <Button
-                    onClick={handleStartNavigation}
-                    disabled={
-                      loading ||
-                      !isGoogleApiLoaded ||
-                      !isMapInstanceReady ||
-                      !driverTruck ||
-                      assignedBins.length === 0 ||
-                      error
-                    }
-                    className="px-8 py-3 bg-green-500 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Start Navigation
-                  </Button>
-                </div>
+              {driverTruck?.driver_name && (
+                <span className="text-gray-600">
+                  {" "}
+                  ({driverTruck.driver_name})
+                </span>
               )}
+            </h4>
+          </div>
+
+          {/* 2. SCROLLABLE CONTENT SECTION */}
+          {/* This div uses 'flex-1' to take up all available vertical space, pushing the footer down. */}
+          {/* 'overflow-y-auto' makes ONLY THIS SECTION scrollable if its content is too tall. */}
+          {/* Added padding directly to this scrollable div */}
+          <div
+            className="flex-1 overflow-y-auto pr-2"
+            style={{ padding: "0 0 0 0" }}
+          >
+            {" "}
+            {/* Removed px-4 pb-4, add back if needed */}
+            {!loading && !error && (
+              <div className="flex flex-col bg-white p-4 rounded-xl shadow-md ring-1 ring-gray-200">
+                <h4 className="text-xl font-bold mb-3 text-gray-800 border-b pb-1">
+                  Current Navigation Status
+                </h4>
+
+                {/* CONTENT THAT WILL SCROLL (IF TOO TALL) */}
+                {directionsResult && currentLeg ? (
+                  <>
+                    {/* Next Destination Info */}
+                    <div>
+                      <p className="text-lg font-medium text-gray-700">
+                        Next Destination:{" "}
+                        <span className="font-bold text-indigo-600">
+                          {nextDestinationName}
+                        </span>
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {nextDestinationAddress}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Distance: {currentLeg.distance?.text || "N/A"} | Time:{" "}
+                        {currentLeg.duration?.text || "N/A"}
+                      </p>
+                    </div>
+
+                    {/* Trip Instructions */}
+                    <div className="mt-4">
+                      <h3 className="text-lg font-semibold mb-2 text-gray-800">
+                        Trip Instructions
+                      </h3>
+                      <ol className="trip-instructions list-decimal list-inside text-gray-700 pr-2 space-y-1">
+                        {currentLeg.steps?.length > 0 ? (
+                          currentLeg.steps.map((step, stepIndex) => (
+                            <li
+                              key={stepIndex}
+                              dangerouslySetInnerHTML={{
+                                __html: step.instructions
+                                  .replace(/<b>/g, "<strong>")
+                                  .replace(/<\/b>/g, "</strong>"),
+                              }}
+                            />
+                          ))
+                        ) : (
+                          <li>
+                            No detailed instructions available for this step.
+                          </li>
+                        )}
+                      </ol>
+                    </div>
+                  </>
+                ) : (
+                  // Initial state before navigation starts
+                  <div className="text-center mt-6">
+                    <p className="text-gray-500 mb-4">
+                      Click &quot;Start Navigation&quot; to begin your route.
+                    </p>
+                    <Button
+                      onClick={handleStartNavigation}
+                      disabled={
+                        loading ||
+                        !isGoogleApiLoaded ||
+                        !isMapInstanceReady ||
+                        !driverTruck ||
+                        assignedBins.length === 0 ||
+                        error
+                      }
+                      className="px-8 py-3 bg-green-500 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Start Navigation
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {/* END OF SCROLLABLE CONTENT SECTION */}
+
+          {/* 3. FIXED FOOTER SECTION (PREVIOUS/NEXT BUTTONS) */}
+          {/* This div is OUTSIDE the 'overflow-y-auto' section,
+            but still INSIDE the 'flex flex-col h-screen' left panel.
+            Flexbox will position it at the bottom. */}
+          {directionsResult && currentLeg && (
+            <div className="px-4 py-4 border-t bg-white shadow-md">
+              <div className="flex justify-between">
+                <Button
+                  onClick={handlePreviousLeg}
+                  disabled={currentLegIndex === 0}
+                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg disabled:opacity-50"
+                >
+                  Previous
+                </Button>
+                <Button
+                  onClick={handleNextLeg}
+                  disabled={
+                    currentLegIndex >=
+                    directionsResult.routes[0].legs.length - 1
+                  }
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           )}
+          {/* END OF FIXED FOOTER SECTION */}
         </div>
-        {/* Right Panel for the Google Map */}
+        {/* END OF LEFT PANEL */}
+
+        {/* START OF RIGHT PANEL (GOOGLE MAP) */}
         <div style={MAP_PANEL_STYLE}>
-          {/* Show loading text *inside* the map panel if API is not loaded yet */}
           {!isGoogleApiLoaded && (
             <div className="flex justify-center items-center h-full bg-gray-100">
               <p>Loading Google Maps API...</p>
             </div>
           )}
-          {/* Only render GoogleMap component when API is loaded */}
           {isGoogleApiLoaded && (
             <GoogleMap
               mapContainerStyle={MAP_CONTAINER_STYLE}
               center={
-                driverTruck?.t_latitude && driverTruck?.t_longitude // Use optional chaining for safety
+                driverTruck?.t_latitude && driverTruck?.t_longitude
                   ? {
                       lat: driverTruck.t_latitude,
                       lng: driverTruck.t_longitude,
@@ -669,53 +699,39 @@ const DriverMaps = () => {
               {/* Markers and DirectionsRenderer are handled by your functions */}
             </GoogleMap>
           )}
-        </div>{" "}
-        {/* End of Right Panel */}
-      </div>{" "}
-      {/* End of Main container for the split layout */}
+        </div>
+        {/* END OF RIGHT PANEL */}
+      </div>
+      {/* END OF MAIN CONTAINER */}
+
       {/* Your custom scrollbar styles (can be moved to a global CSS file) */}
       <style>{`
-        .custom-scroll::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-          background: #888;
-          border-radius: 10px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
-          background: #555;
-        }
-        
-        body {
-          overflow: hidden;
-        }
+      .custom-scroll::-webkit-scrollbar {
+        width: 8px;
+      }
+      .custom-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
 
-        /* Fix for trip instructions scroll section */
-        .trip-instructions {
-          max-height: 260px;
-          overflow-y: auto;
-          padding-right: 8px;
-        }
+      body {
+        overflow: hidden; /* Ensures no outer scrollbar if you have h-screen on main containers */
+      }
 
-        /* Sticky footer inside the left panel */
-        .fixed-nav-buttons {
-          position: sticky;
-          bottom: 0;
-          background: #ffffff;
-          padding-top: 12px;
-          padding-bottom: 12px;
-          margin-top: 12px;
-          border-top: 1px solid #e5e7eb;
-          display: flex;
-          justify-content: space-between;
-          z-index: 10;
-        }
-              
-              `}</style>
+      .trip-instructions {
+        /* This max-height and overflow-y-auto is for internal scrolling of just instructions if needed */
+        max-height: 260px; /* Adjust as needed */
+        overflow-y: auto;
+        padding-right: 8px;
+      }
+      `}</style>
     </LoadScript>
   );
 };
