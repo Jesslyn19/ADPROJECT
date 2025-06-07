@@ -30,34 +30,36 @@ app.use(express.static(path.join(__dirname, "public")));
 // ===============================
 // 📸 Image Routes
 // ===============================
-app.post("/api/login", async (req, res) => {
-  const { u_name, u_password } = req.body;
+app.get("/api/users", async (req, res) => {
+  const excludeId = req.query.exclude;
 
   try {
     const connection = await mysql.createConnection(dbConfig);
 
-    const [rows] = await connection.execute(
-      `SELECT tb_user.u_id, tb_user.role_id, tb_role.role_name 
-      FROM tb_user 
-      JOIN tb_role ON tb_user.role_id = tb_role.role_id 
-      WHERE BINARY tb_user.u_name = ? AND BINARY tb_user.u_password = ? AND tb_user.u_status=1`,
-      [u_name, u_password]
-    );
+    let query = `
+      SELECT u.*, r.role_name, s.s_name
+      FROM tb_user u
+      JOIN tb_role r ON u.role_id = r.role_id
+      JOIN tb_status s ON u.u_status = s.s_id
+      WHERE u.u_status = 1
+    `;
 
+    // Only exclude the user if excludeId is provided
+    const params = [];
+    if (excludeId) {
+      query += ` AND u.u_id != ?`;
+      params.push(excludeId);
+    }
+
+    query += ` ORDER BY u.u_id ASC`;
+
+    const [rows] = await connection.execute(query, params);
     await connection.end();
 
-    if (rows.length > 0) {
-      res.json({
-        success: true,
-        role_id: rows[0].role_id,
-        u_id: rows[0].u_id,
-        role_name: rows[0].role_name,
-      });
-    } else {
-      res.json({ success: false, message: "Invalid credentials" });
-    }
+    res.json(rows);
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error("Error in /api/users:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -858,15 +860,7 @@ app.post(
       const connection = await mysql.createConnection(dbConfig);
 
       // Save file path or filename in u_url field
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-      const imageUrl = `uploads/${req.file.filename}?cb=${Date.now()}`;
-=======
       const imageUrl = req.file.filename;
->>>>>>> Stashed changes
-=======
-      const imageUrl = req.file.filename;
->>>>>>> Stashed changes
 
       await connection.execute("UPDATE tb_user SET u_url = ? WHERE u_id = ?", [
         imageUrl,
@@ -875,17 +869,12 @@ app.post(
 
       await connection.end();
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
       res.json({ message: "Image uploaded and user updated", imageUrl });
-=======
       const fullImageUrl = `http://localhost:5000/uploads/${imageUrl}`;
-      res.json({ message: "Image uploaded and user updated", imageUrl: fullImageUrl });
->>>>>>> Stashed changes
-=======
-      const fullImageUrl = `http://localhost:5000/uploads/${imageUrl}`;
-      res.json({ message: "Image uploaded and user updated", imageUrl: fullImageUrl });
->>>>>>> Stashed changes
+      res.json({
+        message: "Image uploaded and user updated",
+        imageUrl: fullImageUrl,
+      });
     } catch (error) {
       console.error("Error uploading image", error);
       res.status(500).json({ error: error.message });
