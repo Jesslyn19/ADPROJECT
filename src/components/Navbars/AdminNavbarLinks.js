@@ -226,15 +226,16 @@
 import React from "react";
 import { useHistory } from "react-router-dom";
 // Material-UI components
-import { makeStyles } from "@material-ui/core/styles";
-import ExitToAppIcon from "@material-ui/icons/ExitToApp";
+//import { makeStyles } from "@material-ui/core/styles";
+//import ExitToAppIcon from "@material-ui/icons/ExitToApp";
+import Icon from "@material-ui/core/Icon";
 import Button from "components/CustomButtons/Button.js";
-import styles from "assets/jss/material-dashboard-react/components/headerLinksStyle.js";
+//import styles from "assets/jss/material-dashboard-react/components/headerLinksStyle.js";
 
-const useStyles = makeStyles(styles);
+//const useStyles = makeStyles(styles);
 
 export default function AdminNavbarLinks() {
-  const classes = useStyles();
+  //const classes = useStyles();
   const history = useHistory();
 
   const handleLogout = () => {
@@ -243,15 +244,15 @@ export default function AdminNavbarLinks() {
   };
 
   return (
-    <div className={classes.manager}>
+    <div>
       <Button
         color={window.innerWidth > 959 ? "transparent" : "white"}
         justIcon={window.innerWidth > 959}
         simple={!(window.innerWidth > 959)}
         onClick={handleLogout}
-        className={classes.buttonLink}
+        //className={classes.buttonLink}
       >
-        <ExitToAppIcon style={{ fontSize: 50 }} />
+        <Icon style={{ fontSize: 30 }}>logout</Icon>
       </Button>
     </div>
   );
