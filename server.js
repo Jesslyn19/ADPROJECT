@@ -40,7 +40,7 @@ app.post("/api/login", async (req, res) => {
       `SELECT tb_user.u_id, tb_user.role_id, tb_role.role_name 
       FROM tb_user 
       JOIN tb_role ON tb_user.role_id = tb_role.role_id 
-      WHERE BINARY tb_user.u_name = ? AND BINARY tb_user.u_password = ?`,
+      WHERE BINARY tb_user.u_name = ? AND BINARY tb_user.u_password = ? AND tb_user.u_status=1`,
       [u_name, u_password]
     );
 
@@ -246,19 +246,31 @@ app.delete("/api/customers/:id", async (req, res) => {
 });
 
 app.get("/api/users", async (req, res) => {
+  const excludeId = req.query.exclude;
+
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute(
-      `SELECT u.*, r.role_name, s.s_name
-       FROM tb_user u
-       JOIN tb_role r ON u.role_id = r.role_id
-       JOIN tb_status s ON u.u_status = s.s_id
-       WHERE u.u_status = 1
-       ORDER BY u.u_id ASC`
-    );
+
+    let query = `
+      SELECT u.*, r.role_name, s.s_name
+      FROM tb_user u
+      JOIN tb_role r ON u.role_id = r.role_id
+      JOIN tb_status s ON u.u_status = s.s_id
+      WHERE u.u_status = 1
+    `;
+
+    // Only exclude the user if excludeId is provided
+    const params = [];
+    if (excludeId) {
+      query += ` AND u.u_id != ?`;
+      params.push(excludeId);
+    }
+
+    query += ` ORDER BY u.u_id ASC`;
+
+    const [rows] = await connection.execute(query, params);
     await connection.end();
 
-    console.log("Fetched from DB:", rows);
     res.json(rows);
   } catch (error) {
     console.error("Error in /api/users:", error);
@@ -731,7 +743,7 @@ app.get("/api/users/:id", async (req, res) => {
 
     const user = rows[0];
     if (user.u_url) {
-      user.u_url = `uploads/${user.u_url}`;
+      user.u_url = `http://localhost:5000/uploads/${user.u_url}`;
     }
     res.json(user);
   } catch (error) {
@@ -846,7 +858,11 @@ app.post(
       const connection = await mysql.createConnection(dbConfig);
 
       // Save file path or filename in u_url field
+<<<<<<< Updated upstream
       const imageUrl = `uploads/${req.file.filename}?cb=${Date.now()}`;
+=======
+      const imageUrl = req.file.filename;
+>>>>>>> Stashed changes
 
       await connection.execute("UPDATE tb_user SET u_url = ? WHERE u_id = ?", [
         imageUrl,
@@ -855,7 +871,12 @@ app.post(
 
       await connection.end();
 
+<<<<<<< Updated upstream
       res.json({ message: "Image uploaded and user updated", imageUrl });
+=======
+      const fullImageUrl = `http://localhost:5000/uploads/${imageUrl}`;
+      res.json({ message: "Image uploaded and user updated", imageUrl: fullImageUrl });
+>>>>>>> Stashed changes
     } catch (error) {
       console.error("Error uploading image", error);
       res.status(500).json({ error: error.message });

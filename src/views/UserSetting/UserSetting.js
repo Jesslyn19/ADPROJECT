@@ -193,7 +193,7 @@ const UserSetting = () => {
                   ? user.u_url.startsWith("http")
                     ? `${user.u_url}?cb=${cacheBuster}`
                     : `http://localhost:5000/${user.u_url}?cb=${cacheBuster}`
-                  : "/DefaultProfileImage.png"
+                  : "/images/DefaultProfileImage.png"
               }
               style={{
                 width: 150,

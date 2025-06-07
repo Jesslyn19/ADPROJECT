@@ -60,7 +60,10 @@ export default function User() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/users");
+      const currentUserId = localStorage.getItem("userId");
+      const res = await axios.get(`http://localhost:5000/api/users`, {
+        params: { exclude: currentUserId },
+      });
       setusers(res.data);
     } catch (error) {
       console.error("Error fetching users:", error);
