@@ -4,6 +4,12 @@ import PropTypes from "prop-types";
 import axios from "axios";
 import truckblue from "assets/img/truck-blue.png";
 import truckgreen from "assets/img/truck-green.png";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faArrowLeft,
+  faArrowRight,
+  faCheck, // Import faCheck for the finish button
+} from "@fortawesome/free-solid-svg-icons";
 
 const Button = ({ onClick, disabled, className, children }) => (
   <button onClick={onClick} disabled={disabled} className={className}>
@@ -38,10 +44,8 @@ const LEFT_PANEL_STYLE = {
   backgroundColor: "#f9fafb",
   padding: "24px",
   borderRight: "1px solid #e5e7eb",
-  boxShadow: "6px 0 15px rgba(0, 0, 0, 0.05)",
-  zIndex: 20,
-  borderRadius: "0 16px 16px 0",
-  fontFamily: "'Inter', sans-serif",
+  display: "flex",
+  flexDirection: "column",
 };
 
 const MAP_PANEL_STYLE = {
@@ -57,7 +61,6 @@ const TRUCK_ICONS = {
   orange: truckgreen,
 };
 
-// Define libraries array once outside the component to prevent re-creation
 const googleMapsLibraries = ["geometry", "places", "marker"];
 
 const DriverMaps = () => {
@@ -357,7 +360,6 @@ const DriverMaps = () => {
     [assignedBins, currentLegIndex, driverTruck]
   );
 
-  // Effect to recalculate and display route when data is loaded
   useEffect(() => {
     console.log("Effect: Check for route calculation trigger. State:", {
       isGoogleApiLoaded,
@@ -373,7 +375,7 @@ const DriverMaps = () => {
       driverTruck &&
       assignedBins.length > 0 &&
       isNavigationStarted &&
-      !routeFinished // Only calculate if navigation has started and not finished
+      !routeFinished
     ) {
       console.log(
         "All conditions met for route calculation. Calling calculateAndDisplayRoute."
@@ -393,7 +395,6 @@ const DriverMaps = () => {
       markers.current.forEach((marker) => marker.setMap(null));
       markers.current = [];
       setDirectionsResult(null);
-      // Change from setError to setInfoMessage here
       setInfoMessage("No bins assigned for this truck's route.");
       console.warn("No bins assigned for this truck, clearing map/route.");
     }
@@ -583,174 +584,179 @@ const DriverMaps = () => {
     >
       <div style={CONTAINER_MAIN_STYLE} className="flex h-screen bg-white">
         {/* START OF LEFT PANEL */}
-        <div style={LEFT_PANEL_STYLE} className="flex flex-col h-screen">
-          <div className="pt-0 pb-2 px-0">
-            <h4 className="text-2xl font-semibold text-gray-800">
-              Driver Route Map:{" "}
-              <span className="text-blue-600">
-                {driverTruck ? driverTruck.t_plate : "N/A"}
-              </span>
-              {driverTruck?.driver_name && (
-                <span className="text-gray-600">
-                  {" "}
-                  ({driverTruck.driver_name})
+        <div style={LEFT_PANEL_STYLE}>
+          {/* This div will now take all available vertical space and be scrollable */}
+          <div className="flex-1 overflow-y-auto pr-2 custom-scroll">
+            {/* Header Section for Left Panel */}
+            <div className="pt-0 pb-2 px-0">
+              <h4 className="text-2xl font-bold text-gray-800 text-center">
+                Driver Route Map:{" "}
+                <span className="text-blue-600">
+                  {driverTruck ? driverTruck.t_plate : "N/A"}
                 </span>
-              )}
-            </h4>
-          </div>
-
-          <div
-            className="flex-1 overflow-y-auto pr-2"
-            style={{ padding: "0 0 0 0" }}
-          >
-            {!loading && ( // Removed !error from here
-              <div className="flex flex-col bg-white p-4 rounded-xl shadow-md ring-1 ring-gray-200">
-                <h4 className="text-xl font-bold mb-3 text-gray-800 border-b pb-1">
-                  Current Navigation Status
-                </h4>
-
-                {routeFinished ? ( // Display route finished message
-                  <div className="text-center mt-6">
-                    <p className="text-green-600 text-xl font-semibold">
-                      Route Completed!
-                    </p>
-                    <p className="text-gray-500 mt-2">
-                      {infoMessage || "You have reached the final destination."}
-                    </p>
-                    <Button
-                      onClick={() => {
-                        // Reset all relevant states to allow a new route to be started
-                        setIsNavigationStarted(false);
-                        setRouteFinished(false);
-                        setDirectionsResult(null);
-                        setCurrentLegIndex(0);
-                        setError(null); // Clear any previous errors
-                        setInfoMessage(null); // Clear info message too
-                      }}
-                      className="mt-4 px-6 py-2 bg-indigo-500 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-600 transition"
-                    >
-                      Start New Route
-                    </Button>
-                  </div>
-                ) : isNavigationStarted && directionsResult && currentLeg ? (
-                  <>
-                    {/* Display general errors/info within this section if needed */}
-                    {error && (
-                      <div className="text-red-500 text-sm mb-2">{error}</div>
-                    )}
-                    {infoMessage && (
-                      <div className="text-blue-500 text-sm mb-2">
-                        {infoMessage}
-                      </div>
-                    )}
-                    {/* Next Destination Info */}
-                    <div>
-                      <p className="text-lg font-medium text-gray-700">
-                        Next Destination:{" "}
-                        <span className="font-bold text-indigo-600">
-                          {nextDestinationName}
-                        </span>
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {nextDestinationAddress}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Distance: {currentLeg.distance?.text || "N/A"} | Time:{" "}
-                        {currentLeg.duration?.text || "N/A"}
-                      </p>
-                    </div>
-
-                    {/* Trip Instructions */}
-                    <div className="mt-4">
-                      <h3 className="text-lg font-semibold mb-2 text-gray-800">
-                        Trip Instructions
-                      </h3>
-                      <ol className="trip-instructions list-decimal list-inside text-gray-700 pr-2 space-y-1">
-                        {currentLeg.steps?.length > 0 ? (
-                          currentLeg.steps.map((step, stepIndex) => (
-                            <li
-                              key={stepIndex}
-                              dangerouslySetInnerHTML={{
-                                __html: step.instructions
-                                  .replace(/<b>/g, "<strong>")
-                                  .replace(/<\/b>/g, "</strong>"),
-                              }}
-                            />
-                          ))
-                        ) : (
-                          <li>
-                            No detailed instructions available for this step.
-                          </li>
-                        )}
-                      </ol>
-                    </div>
-                  </>
-                ) : (
-                  // Initial state before navigation starts
-                  <div className="text-center mt-6">
-                    {/* Display general errors/info within this section if needed */}
-                    {error && (
-                      <div className="text-red-500 text-sm mb-2">{error}</div>
-                    )}
-                    {infoMessage && (
-                      <div className="text-blue-500 text-sm mb-2">
-                        {infoMessage}
-                      </div>
-                    )}
-                    <p className="text-gray-500 mb-4">
-                      Click &quot;Start Navigation&quot; to begin your route.
-                    </p>
-                    <Button
-                      onClick={handleStartNavigation}
-                      disabled={
-                        loading ||
-                        !isGoogleApiLoaded ||
-                        !isMapInstanceReady ||
-                        !driverTruck ||
-                        assignedBins.length === 0 ||
-                        isNavigationStarted ||
-                        !!error // Disable if a general error exists
-                      }
-                      className="px-8 py-3 bg-green-500 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Start Navigation
-                    </Button>
-                  </div>
+                {driverTruck?.driver_name && (
+                  <span className="text-gray-600 text-lg">
+                    {" "}
+                    ({driverTruck.driver_name})
+                  </span>
                 )}
-              </div>
-            )}
+              </h4>
+            </div>
+
+            {/* Current Navigation Status / Start Navigation Section */}
+            <div className="flex flex-col bg-gray-50 p-4 rounded-xl shadow-md ring-1 ring-gray-200 mt-4">
+              <h4 className="text-xl font-bold mb-3 text-gray-800 border-b pb-1">
+                Current Navigation Status
+              </h4>
+
+              {routeFinished ? (
+                <div className="text-center py-6">
+                  <p className="text-green-600 text-2xl font-bold mb-2">
+                    Route Completed!
+                  </p>
+                  <p className="text-gray-600 text-md">
+                    {infoMessage || "You have reached the final destination."}
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setIsNavigationStarted(false);
+                      setRouteFinished(false);
+                      setDirectionsResult(null);
+                      setCurrentLegIndex(0);
+                      setError(null);
+                      setInfoMessage(null);
+                    }}
+                    className="mt-6 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-200 text-lg"
+                  >
+                    Start New Route
+                  </Button>
+                </div>
+              ) : isNavigationStarted && directionsResult && currentLeg ? (
+                <>
+                  {error && (
+                    <div className="text-red-500 text-sm mb-3">{error}</div>
+                  )}
+                  {infoMessage && (
+                    <div className="text-blue-500 text-sm mb-3">
+                      {infoMessage}
+                    </div>
+                  )}
+                  <div className="mb-4 text-center">
+                    <p className="text-2xl font-bold text-indigo-700 mb-1">
+                      {nextDestinationName}
+                    </p>
+                    <p className="text-md text-gray-600 mb-2">
+                      {nextDestinationAddress}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Distance:{" "}
+                      <span className="font-semibold">
+                        {currentLeg.distance?.text || "N/A"}
+                      </span>{" "}
+                      | Time:{" "}
+                      <span className="font-semibold">
+                        {currentLeg.duration?.text || "N/A"}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="flex-grow trip-instructions">
+                    <h3 className="text-lg font-semibold mb-3 text-gray-800">
+                      Trip Instructions
+                    </h3>
+                    <ol className="list-decimal list-inside text-gray-700 space-y-2 text-sm">
+                      {currentLeg.steps?.length > 0 ? (
+                        currentLeg.steps.map((step, stepIndex) => (
+                          <li
+                            key={stepIndex}
+                            dangerouslySetInnerHTML={{
+                              __html: step.instructions
+                                .replace(/<b>/g, "<strong>")
+                                .replace(/<\/b>/g, "</strong>"),
+                            }}
+                          />
+                        ))
+                      ) : (
+                        <li>
+                          No detailed instructions available for this step.
+                        </li>
+                      )}
+                    </ol>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-6">
+                  {error && (
+                    <div className="text-red-500 text-sm mb-3">{error}</div>
+                  )}
+                  {infoMessage && (
+                    <div className="text-blue-500 text-sm mb-3">
+                      {infoMessage}
+                    </div>
+                  )}
+                  <p className="text-gray-600 mb-6 text-md">
+                    Click &quot;Start Navigation&quot; to begin your route.
+                  </p>
+                  <Button
+                    onClick={handleStartNavigation}
+                    disabled={
+                      loading ||
+                      !isGoogleApiLoaded ||
+                      !isMapInstanceReady ||
+                      !driverTruck ||
+                      assignedBins.length === 0 ||
+                      isNavigationStarted ||
+                      !!error
+                    }
+                    className="px-8 py-3 bg-green-600 text-white font-semibold text-lg rounded-full shadow-lg hover:bg-green-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Start Navigation
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
           {/* END OF SCROLLABLE CONTENT SECTION */}
-          {/* 3. FIXED FOOTER SECTION (PREVIOUS/NEXT/FINISH BUTTONS) */}
-          {isNavigationStarted &&
-            !routeFinished && ( // Only show navigation buttons if navigation started and not finished
-              <div className="bottom-0 left-0 w-full px-4 py-4 border-t bg-white shadow-md z-10 flex justify-between">
+
+          {/* NAVIGATION BUTTONS (AT BOTTOM OF LEFT PANEL) */}
+          {isNavigationStarted && !routeFinished && (
+            <div className="mt-6 flex justify-center space-x-6">
+              <Button
+                onClick={handlePreviousLeg}
+                disabled={isPreviousDisabled}
+                className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center shadow-md hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FontAwesomeIcon
+                  icon={faArrowLeft}
+                  className="text-3xl text-gray-700"
+                />
+              </Button>
+
+              {isAtLastLeg ? (
                 <Button
-                  onClick={handlePreviousLeg}
-                  disabled={isPreviousDisabled}
-                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg disabled:opacity-50"
+                  onClick={handleFinishRoute}
+                  disabled={!directionsResult}
+                  className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-md hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Previous
+                  <FontAwesomeIcon
+                    icon={faCheck}
+                    className="text-3xl text-white"
+                  />
                 </Button>
-                {isAtLastLeg ? (
-                  <Button
-                    onClick={handleFinishRoute}
-                    disabled={!directionsResult} // Disable if no directions result
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transition disabled:opacity-50"
-                  >
-                    Finish Route
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleNextLeg}
-                    disabled={isNextDisabled}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
-                  >
-                    Next
-                  </Button>
-                )}
-              </div>
-            )}
+              ) : (
+                <Button
+                  onClick={handleNextLeg}
+                  disabled={isNextDisabled}
+                  className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center shadow-md hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FontAwesomeIcon
+                    icon={faArrowRight}
+                    className="text-3xl text-white"
+                  />
+                </Button>
+              )}
+            </div>
+          )}
         </div>
         {/* END OF LEFT PANEL */}
         {/* START OF RIGHT PANEL (GOOGLE MAP) */}
