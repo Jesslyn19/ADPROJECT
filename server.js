@@ -480,7 +480,7 @@ app.get("/api/total-bins", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      "SELECT COUNT(*) AS total FROM tb_smartbin"
+      "SELECT COUNT(*) AS total FROM tb_smartbin WHERE sb_status=1"
     );
     await connection.end();
 
