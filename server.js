@@ -40,7 +40,7 @@ app.post("/api/login", async (req, res) => {
       `SELECT tb_user.u_id, tb_user.role_id, tb_role.role_name 
       FROM tb_user 
       JOIN tb_role ON tb_user.role_id = tb_role.role_id 
-      WHERE tb_user.u_name = ? AND tb_user.u_password = ?`,
+      WHERE BINARY tb_user.u_name = ? AND tb_user.u_password = ?`,
       [u_name, u_password]
     );
 
