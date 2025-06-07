@@ -859,7 +859,11 @@ app.post(
 
       // Save file path or filename in u_url field
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       const imageUrl = `uploads/${req.file.filename}?cb=${Date.now()}`;
+=======
+      const imageUrl = req.file.filename;
+>>>>>>> Stashed changes
 =======
       const imageUrl = req.file.filename;
 >>>>>>> Stashed changes
@@ -872,7 +876,12 @@ app.post(
       await connection.end();
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       res.json({ message: "Image uploaded and user updated", imageUrl });
+=======
+      const fullImageUrl = `http://localhost:5000/uploads/${imageUrl}`;
+      res.json({ message: "Image uploaded and user updated", imageUrl: fullImageUrl });
+>>>>>>> Stashed changes
 =======
       const fullImageUrl = `http://localhost:5000/uploads/${imageUrl}`;
       res.json({ message: "Image uploaded and user updated", imageUrl: fullImageUrl });
