@@ -108,6 +108,7 @@ export default function User() {
     const { name, value } = e.target;
 
     const noPunctuationFields = [
+      "u_street",
       "u_fname",
       "u_lname",
       "u_city",
@@ -133,6 +134,7 @@ export default function User() {
     const noPunctuationFields = [
       "u_fname",
       "u_lname",
+      "u_street",
       "u_city",
       "u_state",
       "u_country",
