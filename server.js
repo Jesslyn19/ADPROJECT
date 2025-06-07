@@ -832,32 +832,36 @@ app.patch("/api/users/update-password/:id", async (req, res) => {
   }
 });
 
-app.post("/api/users/:id/upload-image", upload.single("image"), async (req, res) => {
-  const userId = req.params.id;
+app.post(
+  "/api/users/:id/upload-image",
+  upload.single("image"),
+  async (req, res) => {
+    const userId = req.params.id;
 
-  if (!req.file) {
-    return res.status(400).json({ error: "No file uploaded" });
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    try {
+      const connection = await mysql.createConnection(dbConfig);
+
+      // Save file path or filename in u_url field
+      const imageUrl = `uploads/${req.file.filename}?cb=${Date.now()}`;
+
+      await connection.execute("UPDATE tb_user SET u_url = ? WHERE u_id = ?", [
+        imageUrl,
+        userId,
+      ]);
+
+      await connection.end();
+
+      res.json({ message: "Image uploaded and user updated", imageUrl });
+    } catch (error) {
+      console.error("Error uploading image", error);
+      res.status(500).json({ error: error.message });
+    }
   }
-
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-
-    // Save file path or filename in u_url field
-    const imageUrl = `uploads/${req.file.filename}?cb=${Date.now()}`;
-
-    await connection.execute(
-      "UPDATE tb_user SET u_url = ? WHERE u_id = ?",
-      [imageUrl, userId]
-    );
-
-    await connection.end();
-
-    res.json({ message: "Image uploaded and user updated", imageUrl });
-  } catch (error) {
-    console.error("Error uploading image", error);
-    res.status(500).json({ error: error.message });
-  }
-});
+);
 
 // ===============================
 // Start Server
