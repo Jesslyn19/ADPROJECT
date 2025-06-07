@@ -1,10 +1,22 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { LoadScript, GoogleMap } from "@react-google-maps/api";
-import { Button } from "@material-ui/core";
+import PropTypes from "prop-types";
 import axios from "axios";
 import truckblue from "assets/img/truck-blue.png";
 import truckgreen from "assets/img/truck-green.png";
 
+const Button = ({ onClick, disabled, className, children }) => (
+  <button onClick={onClick} disabled={disabled} className={className}>
+    {children}
+  </button>
+);
+
+Button.propTypes = {
+  onClick: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+  className: PropTypes.string,
+  children: PropTypes.node.isRequired,
+};
 // Constants
 const MAP_CONTAINER_STYLE = {
   width: "100%",
@@ -33,7 +45,6 @@ const LEFT_PANEL_STYLE = {
 };
 
 const MAP_PANEL_STYLE = {
-  // Renamed for clarity
   flexGrow: 1,
   height: "100%",
 };
@@ -44,13 +55,6 @@ const DEPOT_LOCATION = { lat: 1.4234, lng: 103.6312 }; // Your depot location
 const TRUCK_ICONS = {
   blue: truckblue,
   orange: truckgreen,
-};
-
-const BIN_ICONS = {
-  collected: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
-  missed: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-  active: "http://maps.google.com/mapfiles/ms/icons/orange-dot.png",
-  default: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
 };
 
 // Define libraries array once outside the component to prevent re-creation
@@ -71,12 +75,18 @@ const DriverMaps = () => {
   const [isGoogleApiLoaded, setIsGoogleApiLoaded] = useState(false);
   const [directionsResult, setDirectionsResult] = useState(null);
   const [currentLegIndex, setCurrentLegIndex] = useState(0);
+  const [isNavigationStarted, setIsNavigationStarted] = useState(false);
+  const [routeFinished, setRouteFinished] = useState(false);
+  const [infoMessage, setInfoMessage] = useState(null);
 
   // --- Data Fetching ---
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
+      setInfoMessage(null);
+      setRouteFinished(false);
+      setIsNavigationStarted(false);
       try {
         const [trucksRes, smartbinsRes] = await Promise.all([
           axios.get("http://localhost:5000/api/trucks"),
@@ -104,6 +114,9 @@ const DriverMaps = () => {
 
           setAssignedBins(binsForTruck);
           console.log("Assigned Bins for truck:", binsForTruck);
+          if (binsForTruck.length === 0) {
+            setInfoMessage("No bins assigned for this truck.");
+          }
         } else {
           setError(
             `No truck assigned to driver ID: ${currentDriverId}. Or driver not found.`
@@ -165,6 +178,10 @@ const DriverMaps = () => {
     directionsRenderer.current = null;
     setIsGoogleApiLoaded(false);
     setIsMapInstanceReady(false);
+    setIsNavigationStarted(false);
+    setRouteFinished(false);
+    setInfoMessage(null);
+    setError(null);
     console.log("Map unmounted and resources cleared.");
   }, []);
 
@@ -194,6 +211,8 @@ const DriverMaps = () => {
       markers.current = [];
       setDirectionsResult(null);
       setCurrentLegIndex(0);
+      setRouteFinished(false); // Ensure this is false if route calculation fails
+      setInfoMessage(null); // Clear info message on route calculation
       console.warn(
         "Skipping route calculation: prerequisites not met. Details:",
         {
@@ -250,7 +269,10 @@ const DriverMaps = () => {
           console.log("Directions successful. Route response:", response);
           directionsRenderer.current.setDirections(response);
           setDirectionsResult(response);
-          setCurrentLegIndex(0);
+          setCurrentLegIndex(0); // Always start from the first leg
+          setRouteFinished(false); // Ensure this is false when a new route starts
+          setError(null); // Clear any errors on successful route
+          setInfoMessage(null); // Clear any info messages
           addCustomMarkers(response);
           if (googleMapRef.current) {
             googleMapRef.current.fitBounds(response.routes[0].bounds);
@@ -260,11 +282,14 @@ const DriverMaps = () => {
           console.error("Directions request failed:", status, response);
           setDirectionsResult(null);
           directionsRenderer.current.setDirections({ routes: [] });
+          setRouteFinished(false); // Ensure this is false on failure
+          setInfoMessage(null); // Clear info message on failure
         }
       }
     );
   }, [isGoogleApiLoaded, isMapInstanceReady, driverTruck, assignedBins]);
 
+  // Add custom markers for depot, bins, and current truck position
   // Add custom markers for depot, bins, and current truck position
   const addCustomMarkers = useCallback(
     (response) => {
@@ -289,7 +314,6 @@ const DriverMaps = () => {
         position: DEPOT_LOCATION,
         map: googleMapRef.current,
         icon: {
-          url: BIN_ICONS.default,
           scaledSize: new window.google.maps.Size(32, 32),
         },
         title: "Depot (Start Location)",
@@ -297,38 +321,16 @@ const DriverMaps = () => {
       markers.current.push(depotMarker);
 
       assignedBins.forEach((bin, index) => {
-        let binIconUrl = BIN_ICONS.default;
-        if (bin.sb_status === "Collected") {
-          binIconUrl = BIN_ICONS.collected;
-        } else if (bin.sb_status === "Missed") {
-          binIconUrl = BIN_ICONS.missed;
-        }
-
-        // Highlight the current active destination bin based on currentLegIndex
-        if (
-          currentLegIndex < assignedBins.length &&
-          index === currentLegIndex
-        ) {
-          binIconUrl = BIN_ICONS.active;
-        }
-
         const marker = new window.google.maps.Marker({
           position: { lat: bin.sb_latitude, lng: bin.sb_longitude },
           map: googleMapRef.current,
-          icon: {
-            url: binIconUrl,
-            scaledSize: new window.google.maps.Size(32, 32),
-          },
+          icon: { scaledSize: new window.google.maps.Size(32, 32) },
           title: `Bin ID: ${bin.sb_id}\nStatus: ${bin.sb_status}\n`,
           label: {
             text: String(index + 1),
             color: "white",
             fontWeight: "bold",
           },
-          zIndex:
-            binIconUrl === BIN_ICONS.active
-              ? window.google.maps.Marker.MAX_ZINDEX + 1
-              : window.google.maps.Marker.MAX_ZINDEX,
         });
         markers.current.push(marker);
       });
@@ -362,25 +364,37 @@ const DriverMaps = () => {
       isMapInstanceReady,
       driverTruckPresent: !!driverTruck,
       assignedBinsCount: assignedBins.length,
+      isNavigationStarted,
+      routeFinished, // Added routeFinished to dependencies
     });
     if (
       isGoogleApiLoaded &&
       isMapInstanceReady &&
       driverTruck &&
-      assignedBins.length > 0
+      assignedBins.length > 0 &&
+      isNavigationStarted &&
+      !routeFinished // Only calculate if navigation has started and not finished
     ) {
       console.log(
         "All conditions met for route calculation. Calling calculateAndDisplayRoute."
       );
       calculateAndDisplayRoute();
-    } else if (isGoogleApiLoaded && driverTruck && assignedBins.length === 0) {
+    } else if (
+      isGoogleApiLoaded &&
+      isMapInstanceReady &&
+      driverTruck &&
+      assignedBins.length === 0 &&
+      isNavigationStarted &&
+      !routeFinished
+    ) {
       if (directionsRenderer.current) {
         directionsRenderer.current.setDirections({ routes: [] });
       }
       markers.current.forEach((marker) => marker.setMap(null));
       markers.current = [];
       setDirectionsResult(null);
-      setError("No bins assigned for this truck's route.");
+      // Change from setError to setInfoMessage here
+      setInfoMessage("No bins assigned for this truck's route.");
       console.warn("No bins assigned for this truck, clearing map/route.");
     }
   }, [
@@ -389,6 +403,8 @@ const DriverMaps = () => {
     driverTruck,
     assignedBins,
     calculateAndDisplayRoute,
+    isNavigationStarted,
+    routeFinished,
   ]);
 
   useEffect(() => {
@@ -398,22 +414,36 @@ const DriverMaps = () => {
         currentLegIndex,
         directionsResultPresent: !!directionsResult,
         isMapInstanceReady,
+        isNavigationStarted,
+        routeFinished, // Added routeFinished to dependencies
       }
     );
-    if (googleMapRef.current && directionsResult && isMapInstanceReady) {
+    if (
+      googleMapRef.current &&
+      directionsResult &&
+      isMapInstanceReady &&
+      isNavigationStarted &&
+      !routeFinished
+    ) {
       addCustomMarkers(directionsResult);
     }
-  }, [currentLegIndex, directionsResult, addCustomMarkers, isMapInstanceReady]);
+  }, [
+    currentLegIndex,
+    directionsResult,
+    addCustomMarkers,
+    isMapInstanceReady,
+    isNavigationStarted,
+    routeFinished,
+  ]);
 
-  // --- Navigation Controls ---
   // --- Navigation Controls ---
   const handleStartNavigation = () => {
     console.log("Start Navigation clicked.");
-    if (!directionsResult && driverTruck && assignedBins.length > 0) {
-      calculateAndDisplayRoute();
-    }
+    setIsNavigationStarted(true);
+    setRouteFinished(false); // Ensure route is not marked as finished
+    setInfoMessage(null);
+    setError(null);
     setCurrentLegIndex(0);
-    // Pan to the truck's location or the first destination
     if (googleMapRef.current && driverTruck) {
       const truckLocation =
         driverTruck.t_latitude && driverTruck.t_longitude
@@ -425,7 +455,6 @@ const DriverMaps = () => {
   };
 
   const handleNextLeg = useCallback(() => {
-    // Corrected name
     console.log("Next Destination clicked. currentLegIndex:", currentLegIndex);
     if (
       directionsResult &&
@@ -433,7 +462,8 @@ const DriverMaps = () => {
       currentLegIndex < directionsResult.routes[0].legs.length - 1
     ) {
       setCurrentLegIndex((prev) => prev + 1);
-      // Pan to the next destination
+      setInfoMessage(null); // Clear info messages on navigation
+      setError(null);
       if (
         googleMapRef.current &&
         directionsResult.routes[0].legs[currentLegIndex + 1]
@@ -444,20 +474,23 @@ const DriverMaps = () => {
         googleMapRef.current.setZoom(DEFAULT_ZOOM);
       }
     } else {
-      console.log("End of route.");
-      setError("Route completed!");
+      console.log("End of route (Next button hit at last leg).");
     }
   }, [currentLegIndex, directionsResult]);
 
   const handlePreviousLeg = useCallback(() => {
-    // Corrected name
     console.log(
       "Previous Destination clicked. currentLegIndex:",
       currentLegIndex
     );
     if (currentLegIndex > 0) {
       setCurrentLegIndex((prev) => prev - 1);
-      // Pan to the previous destination
+      setInfoMessage(null); // Clear info messages on navigation
+      setError(null);
+      // Ensure the route finished state is reset if going back from the end
+      if (routeFinished) {
+        setRouteFinished(false);
+      }
       if (
         googleMapRef.current &&
         directionsResult?.routes[0]?.legs[currentLegIndex - 1]
@@ -470,28 +503,53 @@ const DriverMaps = () => {
     } else {
       console.log("Already at the start of the route.");
     }
-  }, [currentLegIndex, directionsResult]);
+  }, [currentLegIndex, directionsResult, routeFinished]);
+  const handleFinishRoute = useCallback(() => {
+    console.log("Finish Route clicked.");
+    // Clear the map and reset states
+    if (directionsRenderer.current) {
+      directionsRenderer.current.setMap(null); // Remove directions from map
+    }
+    markers.current.forEach((marker) => marker.setMap(null));
+    markers.current = [];
+    setDirectionsResult(null);
+    setCurrentLegIndex(0);
+    setIsNavigationStarted(false);
+    setRouteFinished(true);
+    setInfoMessage("Route successfully completed!");
+    setError(null);
+    if (googleMapRef.current) {
+      googleMapRef.current.panTo(DEPOT_LOCATION);
+      googleMapRef.current.setZoom(DEFAULT_ZOOM);
+    }
+  }, []);
 
   const currentLeg = directionsResult?.routes[0]?.legs[currentLegIndex];
-  const nextDestinationAddress = currentLeg?.end_address || "N/A"; // Provide a default in case of null
-  /*   const nextDestinationBin = currentLeg
-    ? assignedBins.find(
-        (bin) =>
-          bin.sb_latitude === currentLeg.end_location.lat() &&
-          bin.sb_longitude === currentLeg.end_location.lng()
-      )
-    : null;
- */
+  const nextDestinationAddress = currentLeg?.end_address || "N/A";
+
   // Corrected logic for nextDestinationName
   let nextDestinationName = "N/A";
   if (assignedBins.length > 0) {
     if (currentLegIndex < assignedBins.length) {
-      // Target is the current bin at this index
       nextDestinationName = `Bin ${assignedBins[currentLegIndex]?.sb_id}`;
+    } else if (currentLegIndex === assignedBins.length) {
+      nextDestinationName = "Final Destination (Depot)";
     } else {
-      nextDestinationName = "Route Completed"; // If index is beyond last bin
+      nextDestinationName = "Route Completed";
     }
   }
+  const isPreviousDisabled =
+    currentLegIndex === 0 || !directionsResult || routeFinished;
+  const isNextDisabled =
+    !directionsResult ||
+    !directionsResult.routes[0] ||
+    currentLegIndex >= directionsResult.routes[0].legs.length - 1 ||
+    routeFinished; // Disable next if route is finished
+
+  const isAtLastLeg =
+    directionsResult &&
+    directionsResult.routes[0] &&
+    currentLegIndex === directionsResult.routes[0].legs.length - 1;
 
   if (loading) {
     return (
@@ -501,7 +559,7 @@ const DriverMaps = () => {
     );
   }
 
-  if (error && (!directionsResult || assignedBins.length === 0)) {
+  if (error && !routeFinished) {
     return (
       <div className="flex flex-col items-center justify-center h-screen text-red-600">
         <p className="text-lg font-semibold">Error:</p>
@@ -523,18 +581,10 @@ const DriverMaps = () => {
       libraries={googleMapsLibraries} // Use the constant defined outside
       loading="async"
     >
-      {/* This is the main container for your split layout (left panel + right map) */}
       <div style={CONTAINER_MAIN_STYLE} className="flex h-screen bg-white">
         {/* START OF LEFT PANEL */}
-        {/* This is the container for all left-side content. It's a flex column filling the screen height. */}
-        {/* The h-screen is CRITICAL here so flex-1 can calculate its height */}
         <div style={LEFT_PANEL_STYLE} className="flex flex-col h-screen">
-          {/* 1. FIXED HEADER SECTION (DRIVER INFO) */}
-          {/* This part will always stay at the top of the left panel. */}
-          {/* Adjusted padding slightly to avoid double padding with LEFT_PANEL_STYLE's padding */}
           <div className="pt-0 pb-2 px-0">
-            {" "}
-            {/* Removed specific p-4 pb-2 here, relies on LEFT_PANEL_STYLE padding */}
             <h4 className="text-2xl font-semibold text-gray-800">
               Driver Route Map:{" "}
               <span className="text-blue-600">
@@ -549,25 +599,50 @@ const DriverMaps = () => {
             </h4>
           </div>
 
-          {/* 2. SCROLLABLE CONTENT SECTION */}
-          {/* This div uses 'flex-1' to take up all available vertical space, pushing the footer down. */}
-          {/* 'overflow-y-auto' makes ONLY THIS SECTION scrollable if its content is too tall. */}
-          {/* Added padding directly to this scrollable div */}
           <div
             className="flex-1 overflow-y-auto pr-2"
             style={{ padding: "0 0 0 0" }}
           >
-            {" "}
-            {/* Removed px-4 pb-4, add back if needed */}
-            {!loading && !error && (
+            {!loading && ( // Removed !error from here
               <div className="flex flex-col bg-white p-4 rounded-xl shadow-md ring-1 ring-gray-200">
                 <h4 className="text-xl font-bold mb-3 text-gray-800 border-b pb-1">
                   Current Navigation Status
                 </h4>
 
-                {/* CONTENT THAT WILL SCROLL (IF TOO TALL) */}
-                {directionsResult && currentLeg ? (
+                {routeFinished ? ( // Display route finished message
+                  <div className="text-center mt-6">
+                    <p className="text-green-600 text-xl font-semibold">
+                      Route Completed!
+                    </p>
+                    <p className="text-gray-500 mt-2">
+                      {infoMessage || "You have reached the final destination."}
+                    </p>
+                    <Button
+                      onClick={() => {
+                        // Reset all relevant states to allow a new route to be started
+                        setIsNavigationStarted(false);
+                        setRouteFinished(false);
+                        setDirectionsResult(null);
+                        setCurrentLegIndex(0);
+                        setError(null); // Clear any previous errors
+                        setInfoMessage(null); // Clear info message too
+                      }}
+                      className="mt-4 px-6 py-2 bg-indigo-500 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-600 transition"
+                    >
+                      Start New Route
+                    </Button>
+                  </div>
+                ) : isNavigationStarted && directionsResult && currentLeg ? (
                   <>
+                    {/* Display general errors/info within this section if needed */}
+                    {error && (
+                      <div className="text-red-500 text-sm mb-2">{error}</div>
+                    )}
+                    {infoMessage && (
+                      <div className="text-blue-500 text-sm mb-2">
+                        {infoMessage}
+                      </div>
+                    )}
                     {/* Next Destination Info */}
                     <div>
                       <p className="text-lg font-medium text-gray-700">
@@ -613,6 +688,15 @@ const DriverMaps = () => {
                 ) : (
                   // Initial state before navigation starts
                   <div className="text-center mt-6">
+                    {/* Display general errors/info within this section if needed */}
+                    {error && (
+                      <div className="text-red-500 text-sm mb-2">{error}</div>
+                    )}
+                    {infoMessage && (
+                      <div className="text-blue-500 text-sm mb-2">
+                        {infoMessage}
+                      </div>
+                    )}
                     <p className="text-gray-500 mb-4">
                       Click &quot;Start Navigation&quot; to begin your route.
                     </p>
@@ -624,7 +708,8 @@ const DriverMaps = () => {
                         !isMapInstanceReady ||
                         !driverTruck ||
                         assignedBins.length === 0 ||
-                        error
+                        isNavigationStarted ||
+                        !!error // Disable if a general error exists
                       }
                       className="px-8 py-3 bg-green-500 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -636,38 +721,38 @@ const DriverMaps = () => {
             )}
           </div>
           {/* END OF SCROLLABLE CONTENT SECTION */}
-
-          {/* 3. FIXED FOOTER SECTION (PREVIOUS/NEXT BUTTONS) */}
-          {/* This div is OUTSIDE the 'overflow-y-auto' section,
-            but still INSIDE the 'flex flex-col h-screen' left panel.
-            Flexbox will position it at the bottom. */}
-          {directionsResult && currentLeg && (
-            <div className="px-4 py-4 border-t bg-white shadow-md">
-              <div className="flex justify-between">
+          {/* 3. FIXED FOOTER SECTION (PREVIOUS/NEXT/FINISH BUTTONS) */}
+          {isNavigationStarted &&
+            !routeFinished && ( // Only show navigation buttons if navigation started and not finished
+              <div className="bottom-0 left-0 w-full px-4 py-4 border-t bg-white shadow-md z-10 flex justify-between">
                 <Button
                   onClick={handlePreviousLeg}
-                  disabled={currentLegIndex === 0}
+                  disabled={isPreviousDisabled}
                   className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg disabled:opacity-50"
                 >
                   Previous
                 </Button>
-                <Button
-                  onClick={handleNextLeg}
-                  disabled={
-                    currentLegIndex >=
-                    directionsResult.routes[0].legs.length - 1
-                  }
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
-                >
-                  Next
-                </Button>
+                {isAtLastLeg ? (
+                  <Button
+                    onClick={handleFinishRoute}
+                    disabled={!directionsResult} // Disable if no directions result
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transition disabled:opacity-50"
+                  >
+                    Finish Route
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleNextLeg}
+                    disabled={isNextDisabled}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
+                  >
+                    Next
+                  </Button>
+                )}
               </div>
-            </div>
-          )}
-          {/* END OF FIXED FOOTER SECTION */}
+            )}
         </div>
         {/* END OF LEFT PANEL */}
-
         {/* START OF RIGHT PANEL (GOOGLE MAP) */}
         <div style={MAP_PANEL_STYLE}>
           {!isGoogleApiLoaded && (
@@ -695,16 +780,13 @@ const DriverMaps = () => {
                 fullscreenControl: false,
                 zoomControl: true,
               }}
-            >
-              {/* Markers and DirectionsRenderer are handled by your functions */}
-            </GoogleMap>
+            ></GoogleMap>
           )}
         </div>
         {/* END OF RIGHT PANEL */}
       </div>
       {/* END OF MAIN CONTAINER */}
 
-      {/* Your custom scrollbar styles (can be moved to a global CSS file) */}
       <style>{`
       .custom-scroll::-webkit-scrollbar {
         width: 8px;
@@ -722,12 +804,11 @@ const DriverMaps = () => {
       }
 
       body {
-        overflow: hidden; /* Ensures no outer scrollbar if you have h-screen on main containers */
+        overflow: hidden;
       }
 
       .trip-instructions {
-        /* This max-height and overflow-y-auto is for internal scrolling of just instructions if needed */
-        max-height: 260px; /* Adjust as needed */
+        max-height: 260px;
         overflow-y: auto;
         padding-right: 8px;
       }
