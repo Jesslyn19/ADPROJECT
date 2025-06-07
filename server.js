@@ -134,6 +134,7 @@ app.get("/api/tasks", async (req, res) => {
       LEFT JOIN tb_truck t ON s.t_id = t.t_id
       LEFT JOIN tb_image i 
         ON s.sb_plate = i.i_plate AND DATE(i.i_date) = ?
+      WHERE sb_status = 1
       ORDER BY s.sb_id ASC
       `,
       [selectedDate]
@@ -162,7 +163,9 @@ app.get("/api/customers", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      "SELECT * FROM tb_customer ORDER BY c_id ASC"
+      `SELECT * FROM tb_customer 
+       WHERE c_status = 1 
+       ORDER BY c_id ASC`
     );
     await connection.end();
 
@@ -232,7 +235,7 @@ app.put("/api/customers/:id", async (req, res) => {
 app.delete("/api/customers/:id", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    await connection.execute("DELETE FROM tb_customer WHERE c_id = ?", [
+    await connection.execute("UPDATE tb_customer SET c_status=2 WHERE c_id=?", [
       req.params.id,
     ]);
     await connection.end();
@@ -246,9 +249,11 @@ app.get("/api/users", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      `SELECT u.*, r.role_name 
+      `SELECT u.*, r.role_name, s.s_name
        FROM tb_user u
        JOIN tb_role r ON u.role_id = r.role_id
+       JOIN tb_status s ON u.u_status = s.s_id
+       WHERE u.u_status = 1
        ORDER BY u.u_id ASC`
     );
     await connection.end();
@@ -278,6 +283,8 @@ app.post("/api/users", async (req, res) => {
   console.log("POST /api/users body:", req.body);
 
   const {
+    u_fname,
+    u_lname,
     u_name,
     u_street,
     u_postcode,
@@ -289,6 +296,8 @@ app.post("/api/users", async (req, res) => {
   } = req.body;
 
   if (
+    !u_fname ||
+    !u_lname ||
     !u_name ||
     !u_street ||
     !u_postcode ||
@@ -304,9 +313,11 @@ app.post("/api/users", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [result] = await connection.execute(
-      `INSERT INTO tb_user (u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO tb_user (u_fname, u_lname, u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        u_fname,
+        u_lname,
         u_name,
         u_street,
         u_postcode,
@@ -332,6 +343,8 @@ app.post("/api/users", async (req, res) => {
 // UPDATE a user
 app.put("/api/users/:id", async (req, res) => {
   const {
+    u_fname,
+    u_lname,
     u_name,
     u_street,
     u_postcode,
@@ -345,9 +358,11 @@ app.put("/api/users/:id", async (req, res) => {
     const connection = await mysql.createConnection(dbConfig);
     await connection.execute(
       `UPDATE tb_user 
-             SET u_name=?, u_street=?, u_postcode=?, u_city=?, u_state=?, u_country=?, role_id=?, u_password=?
+             SET u_fname=?, u_lname=?, u_name=?, u_street=?, u_postcode=?, u_city=?, u_state=?, u_country=?, role_id=?, u_password=?
              WHERE u_id=?`,
       [
+        u_fname,
+        u_lname,
         u_name,
         u_street,
         u_postcode,
@@ -370,7 +385,7 @@ app.put("/api/users/:id", async (req, res) => {
 app.delete("/api/users/:id", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    await connection.execute("DELETE FROM tb_user WHERE u_id = ?", [
+    await connection.execute("UPDATE tb_user SET u_status = 2 WHERE u_id = ?", [
       req.params.id,
     ]);
     await connection.end();
@@ -386,7 +401,9 @@ app.get("/api/smartbins", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      "SELECT sb_id, sb_plate, sb_latitude, sb_longitude, c_id, t_id FROM tb_smartbin"
+      `SELECT sb_id, sb_plate, sb_latitude, sb_longitude, c_id, t_id 
+       FROM tb_smartbin 
+       WHERE sb_status = 1`
     );
     await connection.end();
 
@@ -447,9 +464,10 @@ app.put("/api/smartbins/:id", async (req, res) => {
 app.delete("/api/smartbins/:id", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    await connection.execute("DELETE FROM tb_smartbin WHERE sb_id = ?", [
-      req.params.id,
-    ]);
+    await connection.execute(
+      "UPDATE tb_smartbin SET sb_status = 2 WHERE sb_id = ?",
+      [req.params.id]
+    );
     await connection.end();
     res.json({ message: "Bin deleted successfully" });
   } catch (error) {
@@ -529,7 +547,7 @@ app.post("/api/create_report", upload.single("image"), async (req, res) => {
 app.delete("/api/reports/:id", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    await connection.execute("DELETE FROM tb_report WHERE r_id = ?", [
+    await connection.execute("UPDATE tb_report SET r_status=2 WHERE r_id = ?", [
       req.params.id,
     ]);
     await connection.end();
@@ -544,7 +562,9 @@ app.get("/api/reports", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      "SELECT r_id, r_subject, r_content, r_image, r_writer, r_datetime FROM tb_report"
+      `SELECT r_id, r_subject, r_content, r_image, r_writer, r_datetime 
+       FROM tb_report 
+       WHERE status = 1`
     );
     await connection.end();
 
@@ -571,6 +591,7 @@ app.get("/api/trucks", async (req, res) => {
         u.u_name AS driver_name
       FROM tb_truck t
       LEFT JOIN tb_user u ON t.driver_id = u.u_id AND u.role_id = 2
+      WHERE t.t_status = 1
       ORDER BY t.t_id ASC
     `);
     await connection.end();
@@ -650,7 +671,7 @@ app.delete("/api/trucks/:id", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [result] = await connection.execute(
-      "DELETE FROM tb_truck WHERE t_id = ?",
+      "UPDATE tb_truck SET t_status = 2 WHERE t_id = ?",
       [req.params.id]
     );
     await connection.end();

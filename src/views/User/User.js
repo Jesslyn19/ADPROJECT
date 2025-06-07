@@ -36,7 +36,10 @@ export default function User() {
   const [roles, setRoles] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [newUser, setNewUser] = useState({
+    u_fname: "",
+    u_lname: "",
     u_name: "",
+    U_password: "",
     u_street: "",
     u_postcode: "",
     u_city: "",
@@ -103,12 +106,47 @@ export default function User() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditingUser({ ...editingUser, [name]: value });
+
+    const noPunctuationFields = [
+      "u_fname",
+      "u_lname",
+      "u_city",
+      "u_state",
+      "u_country",
+      "u_postcode",
+    ];
+
+    const filteredValue = noPunctuationFields.includes(name)
+      ? value.replace(/[^\w\s]/gi, "")
+      : value;
+
+    setEditingUser((prev) => ({
+      ...prev,
+      [name]: filteredValue,
+    }));
   };
 
   const handleNewUserChange = (e) => {
     const { name, value } = e.target;
-    setNewUser({ ...newUser, [name]: value });
+
+    // List of fields that should NOT have punctuation
+    const noPunctuationFields = [
+      "u_fname",
+      "u_lname",
+      "u_city",
+      "u_state",
+      "u_country",
+      "u_postcode",
+    ];
+
+    const filteredValue = noPunctuationFields.includes(name)
+      ? value.replace(/[^\w\s]/gi, "") // remove punctuation
+      : value;
+
+    setNewUser((prev) => ({
+      ...prev,
+      [name]: filteredValue,
+    }));
   };
 
   const handleCreateUser = async () => {
@@ -119,6 +157,8 @@ export default function User() {
       await fetchUsers();
       alert("User created successfully!");
       setNewUser({
+        u_fname: "",
+        u_lname: "",
         u_name: "",
         u_street: "",
         u_postcode: "",
@@ -159,10 +199,44 @@ export default function User() {
             Create New User
           </Typography>
           <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="u_fname"
+                label="First Name"
+                value={newUser.u_fname}
+                onChange={handleNewUserChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="u_lname"
+                label="Last Name"
+                value={newUser.u_lname}
+                onChange={handleNewUserChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                select
+                name="role_id"
+                label="Role"
+                value={newUser.role_id}
+                onChange={handleNewUserChange}
+                fullWidth
+              >
+                {roles.map((role) => (
+                  <MenuItem key={role.role_id} value={role.role_id}>
+                    {role.role_name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
             <Grid item xs={12} sm={4}>
               <TextField
                 name="u_name"
-                label="Name"
+                label="Username"
                 value={newUser.u_name}
                 onChange={handleNewUserChange}
                 fullWidth
@@ -190,22 +264,6 @@ export default function User() {
                 }}
               />
             </Grid>
-            <Grid item xs={4}>
-              <TextField
-                select
-                name="role_id"
-                label="Role"
-                value={newUser.role_id}
-                onChange={handleNewUserChange}
-                fullWidth
-              >
-                {roles.map((role) => (
-                  <MenuItem key={role.role_id} value={role.role_id}>
-                    {role.role_name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
             <Grid item xs={12} sm={4}>
               <TextField
                 name="u_street"
@@ -217,18 +275,18 @@ export default function User() {
             </Grid>
             <Grid item xs={12} sm={4}>
               <TextField
-                name="u_postcode"
-                label="Postcode"
-                value={newUser.u_postcode}
+                name="u_city"
+                label="City"
+                value={newUser.u_city}
                 onChange={handleNewUserChange}
                 fullWidth
               />
             </Grid>
             <Grid item xs={12} sm={4}>
               <TextField
-                name="u_city"
-                label="City"
-                value={newUser.u_city}
+                name="u_postcode"
+                label="Postcode"
+                value={newUser.u_postcode}
                 onChange={handleNewUserChange}
                 fullWidth
               />
@@ -280,12 +338,9 @@ export default function User() {
                 <TableRow>
                   <TableCell>ID</TableCell>
                   <TableCell>Name</TableCell>
+                  <TableCell>Username</TableCell>
                   <TableCell>Role</TableCell>
-                  <TableCell>Street</TableCell>
-                  <TableCell>Postcode</TableCell>
-                  <TableCell>City</TableCell>
-                  <TableCell>State</TableCell>
-                  <TableCell>Country</TableCell>
+                  <TableCell>Address</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -293,13 +348,22 @@ export default function User() {
                 {users.map((user) => (
                   <TableRow key={user.u_id}>
                     <TableCell>{user.u_id}</TableCell>
+                    <TableCell>
+                      {(user.u_fname || "") + " " + (user.u_lname || "")}
+                    </TableCell>
                     <TableCell>{user.u_name}</TableCell>
                     <TableCell>{user.role_name}</TableCell>
-                    <TableCell>{user.u_street}</TableCell>
-                    <TableCell>{user.u_postcode}</TableCell>
-                    <TableCell>{user.u_city}</TableCell>
-                    <TableCell>{user.u_state}</TableCell>
-                    <TableCell>{user.u_country}</TableCell>
+                    <TableCell>
+                      {(user.u_street || "") +
+                        ", " +
+                        (user.u_city || "") +
+                        ", " +
+                        (user.u_postcode || "") +
+                        ", " +
+                        (user.u_state || "") +
+                        ", " +
+                        (user.u_country || "")}
+                    </TableCell>
                     <TableCell>
                       <Button color="primary" onClick={() => handleEdit(user)}>
                         Edit
@@ -325,8 +389,24 @@ export default function User() {
           {editingUser && (
             <>
               <TextField
+                name="u_fname"
+                label="First Name"
+                value={editingUser.u_fname}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+              />
+              <TextField
+                name="u_lname"
+                label="Last Name"
+                value={editingUser.u_lname}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+              />
+              <TextField
                 name="u_name"
-                label="Name"
+                label="Username"
                 value={editingUser.u_name}
                 onChange={handleChange}
                 fullWidth

@@ -139,9 +139,9 @@ export default function TaskListTable() {
                       .toLowerCase()
                       .includes(plateFilter.toLowerCase())
                 )
-                .map((task) => (
+                .map((task, index) => (
                   <TableRow key={task.sb_id}>
-                    <TableCell>{task.sb_id}</TableCell>
+                    <TableCell>{index + 1}</TableCell>
                     <TableCell>{task.sb_plate}</TableCell>
                     <TableCell>{task.incharge || "-"}</TableCell>
                     <TableCell>{task.i_time || "-"}</TableCell>
