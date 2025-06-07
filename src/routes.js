@@ -41,8 +41,18 @@ import Report from "views/report/report.js";
 import UserManagement from "views/User/User.js";
 // import DriverMaps from "views/Driver/DriverMaps.js";
 //import NotificationsPage from "views/Notifications/Notifications.js";
+import SettingsIcon from "@material-ui/icons/Settings";
+import UserSetting from "views/UserSetting/UserSetting.js";
 
 const dashboardRoutes = [
+  {
+    path: "/settings",
+    name: "User Settings",
+    icon: SettingsIcon,
+    component: UserSetting,
+    layout: "/admin",
+  },
+
   {
     path: "/dashboard",
     name: "Dashboard",

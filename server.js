@@ -40,7 +40,7 @@ app.post("/api/login", async (req, res) => {
       `SELECT tb_user.u_id, tb_user.role_id, tb_role.role_name 
       FROM tb_user 
       JOIN tb_role ON tb_user.role_id = tb_role.role_id 
-      WHERE BINARY tb_user.u_name = ? AND tb_user.u_password = ?`,
+      WHERE BINARY tb_user.u_name = ? AND BINARY tb_user.u_password = ?`,
       [u_name, u_password]
     );
 
@@ -706,6 +706,159 @@ app.get("/api/drivers", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// USer setting
+app.get("/api/users/:id", async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+
+    // Query user with role name and status name
+    const [rows] = await connection.execute(
+      `SELECT u.*, r.role_name, s.s_name
+       FROM tb_user u
+       JOIN tb_role r ON u.role_id = r.role_id
+       JOIN tb_status s ON u.u_status = s.s_id
+       WHERE u.u_id = ?`,
+      [userId]
+    );
+
+    await connection.end();
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const user = rows[0];
+    if (user.u_url) {
+      user.u_url = `uploads/${user.u_url}`;
+    }
+    res.json(user);
+  } catch (error) {
+    console.error("Error in GET /api/users/:id", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch("/api/users/:id", async (req, res) => {
+  const userId = req.params.id;
+  const {
+    u_fname,
+    u_lname,
+    u_street,
+    u_city,
+    u_postcode,
+    u_state,
+    u_country,
+    u_password,
+    u_url,
+  } = req.body;
+
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+
+    const [result] = await connection.execute(
+      `UPDATE tb_user SET 
+         u_fname = ?, 
+         u_lname = ?, 
+         u_street = ?, 
+         u_city = ?, 
+         u_postcode = ?, 
+         u_state = ?, 
+         u_country = ?, 
+         u_password = ?, 
+         u_url = ?
+       WHERE u_id = ?`,
+      [
+        u_fname,
+        u_lname,
+        u_street,
+        u_city,
+        u_postcode,
+        u_state,
+        u_country,
+        u_password,
+        u_url,
+        userId,
+      ]
+    );
+
+    await connection.end();
+
+    res.json({ message: "User updated successfully" });
+  } catch (error) {
+    console.error("Error in PATCH /api/users/:id", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch("/api/users/update-password/:id", async (req, res) => {
+  const userId = req.params.id;
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+
+    // Get user
+    const [rows] = await connection.execute(
+      "SELECT u_password FROM tb_user WHERE u_id = ?",
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      await connection.end();
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = rows[0];
+
+    if (user.u_password !== currentPassword) {
+      await connection.end();
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // Update password
+    await connection.execute(
+      "UPDATE tb_user SET u_password = ? WHERE u_id = ?",
+      [newPassword, userId]
+    );
+
+    await connection.end();
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Error in PATCH /api/users/update-password/:id", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/users/:id/upload-image", upload.single("image"), async (req, res) => {
+  const userId = req.params.id;
+
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+
+    // Save file path or filename in u_url field
+    const imageUrl = `uploads/${req.file.filename}?cb=${Date.now()}`;
+
+    await connection.execute(
+      "UPDATE tb_user SET u_url = ? WHERE u_id = ?",
+      [imageUrl, userId]
+    );
+
+    await connection.end();
+
+    res.json({ message: "Image uploaded and user updated", imageUrl });
+  } catch (error) {
+    console.error("Error uploading image", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ===============================
 // Start Server
 // ===============================
