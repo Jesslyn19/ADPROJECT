@@ -43,6 +43,19 @@ app.post("/api/login", async (req, res) => {
         WHERE BINARY tb_user.u_name = ? AND BINARY tb_user.u_password = ? AND tb_user.u_status=1`,
       [u_name, u_password]
     );
+
+    const today = new Date().toISOString().split("T")[0];
+    const [missedRows] = await connection.execute(
+      `
+      SELECT COUNT(*) AS missedCount
+      FROM tb_smartbin s
+      LEFT JOIN tb_image i ON s.sb_plate = i.i_plate AND DATE(i.i_date) = ?
+      WHERE s.sb_status = 1 AND i.i_url IS NULL
+      `,
+      [today]
+    );
+    const missedCount = missedRows[0].missedCount || 0;
+
     await connection.end();
     if (rows.length > 0) {
       res.json({
@@ -50,6 +63,7 @@ app.post("/api/login", async (req, res) => {
         role_id: rows[0].role_id,
         u_id: rows[0].u_id,
         role_name: rows[0].role_name,
+        missedCount,
       });
     } else {
       res.json({ success: false, message: "Invalid credentials" });

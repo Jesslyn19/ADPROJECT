@@ -205,6 +205,9 @@ export default function ImagePage() {
           size="small"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
+          inputProps={{
+            max: endDate || undefined, // optional: prevent selecting startDate after endDate
+          }}
         />
         <TextField
           label="End Date"
@@ -213,6 +216,9 @@ export default function ImagePage() {
           size="small"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
+          inputProps={{
+            min: startDate || undefined, // restrict minimum selectable date
+          }}
         />
         <TextField
           select

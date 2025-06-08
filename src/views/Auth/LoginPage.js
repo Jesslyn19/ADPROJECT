@@ -31,6 +31,7 @@ const LoginPage = () => {
         localStorage.setItem("username", u_name);
         localStorage.setItem("userId", response.data.u_id);
         localStorage.setItem("sessionExpiry", expiryTime); // optionally save username
+        localStorage.setItem("showMissedAlert", response.data.missedCount ?? 0);
 
         if (roleId === 1) history.push("/admin/dashboard");
         else if (roleId === 3) history.push("/collector/dashboard");

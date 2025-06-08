@@ -167,6 +167,18 @@ export default function Dashboard() {
     fetchReports();
   }, []);
 
+  useEffect(() => {
+    const missedCount = localStorage.getItem("showMissedAlert");
+    if (missedCount && parseInt(missedCount) > 0) {
+      const timer = setTimeout(() => {
+        alert(`⚠️ There are ${missedCount} missed tasks today!`);
+        localStorage.removeItem("showMissedAlert");
+      }, 300); // delay 300 ms (adjust as needed)
+
+      return () => clearTimeout(timer); // cleanup on unmount
+    }
+  }, []);
+
   return (
     <div>
       <GridContainer>
