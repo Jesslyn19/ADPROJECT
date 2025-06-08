@@ -2,6 +2,7 @@
 const mysql = require("mysql2/promise");
 const path = require("path");
 const multer = require("multer");
+const axios = require("axios");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const { exec } = require("child_process");
@@ -460,7 +461,7 @@ app.get("/api/smartbins", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      `SELECT sb_id, sb_plate, sb_latitude, sb_longitude, c_id, t_id 
+      `SELECT sb_id, sb_plate, sb_floor, sb_street, sb_postcode, sb_city, sb_state, sb_country, sb_latitude, sb_longitude, c_id, t_id 
        FROM tb_smartbin 
        WHERE sb_status = 1`
     );
@@ -474,19 +475,78 @@ app.get("/api/smartbins", async (req, res) => {
 
 // CREATE a new bin
 app.post("/api/smartbins", async (req, res) => {
-  const { sb_plate, sb_latitude, sb_longitude, c_id, t_id } = req.body;
+  const {
+    sb_plate,
+    sb_floor,
+    sb_street,
+    sb_postcode,
+    sb_city,
+    sb_state,
+    sb_country,
+    c_id,
+    t_id,
+  } = req.body;
 
-  if (!sb_plate || !sb_latitude || !sb_longitude || !c_id || !t_id) {
+  if (
+    !sb_plate ||
+    !sb_floor ||
+    !sb_street ||
+    !sb_postcode ||
+    !sb_city ||
+    !sb_state ||
+    !sb_country ||
+    !c_id ||
+    !t_id
+  ) {
     return res.status(400).json({ error: "All fields are required" });
   }
   console.log("Received new bin:", req.body);
 
+  const fullAddress = `${sb_floor}, ${sb_street}, ${sb_postcode}, ${sb_city}, ${sb_state}, ${sb_country}`;
+  console.log("Full address to geocode:", fullAddress);
+
   try {
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json`;
+
+    const response = await axios.get(geocodeUrl, {
+      params: {
+        address: fullAddress,
+        key: "AIzaSyD227H6VuZdZE7RNLjFnq2YWAjfMlNf_z0",
+      },
+    });
+
+    const results = response.data.results;
+    if (
+      !results.length ||
+      !results[0].geometry ||
+      !results[0].geometry.location
+    ) {
+      console.error("Geocoding failed for address:", fullAddress);
+      return res.status(400).json({ error: "Failed to geocode address." });
+    }
+
+    const { lat, lng } = results[0].geometry.location;
+
+    const sb_latitude = parseFloat(lat);
+    const sb_longitude = parseFloat(lng);
+
     const connection = await mysql.createConnection(dbConfig);
     const [result] = await connection.execute(
-      `INSERT INTO tb_smartbin (sb_plate, sb_latitude, sb_longitude, c_id, t_id) 
-         VALUES (?, ?, ?, ?, ?)`,
-      [sb_plate, sb_latitude, sb_longitude, c_id, t_id]
+      `INSERT INTO tb_smartbin (sb_plate, sb_floor, sb_street, sb_postcode, sb_city, sb_state, sb_country, sb_latitude, sb_longitude, c_id, t_id) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        sb_plate,
+        sb_floor,
+        sb_street,
+        sb_postcode,
+        sb_city,
+        sb_state,
+        sb_country,
+        sb_latitude,
+        sb_longitude,
+        c_id,
+        t_id,
+      ]
     );
     await connection.end();
 
@@ -497,20 +557,72 @@ app.post("/api/smartbins", async (req, res) => {
       binId: result.insertId,
     });
   } catch (error) {
+    console.error("Server error in /api/smartbins POST:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
 // UPDATE a smartbin
 app.put("/api/smartbins/:id", async (req, res) => {
-  const { sb_plate, sb_latitude, sb_longitude, c_id, t_id } = req.body;
+  const {
+    sb_plate,
+    sb_floor,
+    sb_street,
+    sb_postcode,
+    sb_city,
+    sb_state,
+    sb_country,
+    c_id,
+    t_id,
+  } = req.body;
+
+  const fullAddress = `${sb_floor}, ${sb_street}, ${sb_postcode}, ${sb_city}, ${sb_state}, ${sb_country}`;
+  console.log("Full address to geocode:", fullAddress);
+
   try {
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json`;
+
+    const response = await axios.get(geocodeUrl, {
+      params: {
+        address: fullAddress,
+        key: "AIzaSyD227H6VuZdZE7RNLjFnq2YWAjfMlNf_z0",
+      },
+    });
+
+    const results = response.data.results;
+    if (
+      !results.length ||
+      !results[0].geometry ||
+      !results[0].geometry.location
+    ) {
+      console.error("Geocoding failed for address:", fullAddress);
+      return res.status(400).json({ error: "Failed to geocode address." });
+    }
+
+    const { lat, lng } = results[0].geometry.location;
+
+    const sb_latitude = parseFloat(lat);
+    const sb_longitude = parseFloat(lng);
+
     const connection = await mysql.createConnection(dbConfig);
     await connection.execute(
       `UPDATE tb_smartbin 
-             SET sb_plate=?, sb_latitude=?, sb_longitude=?, c_id=?, t_id=? 
+             SET sb_plate=?, sb_floor=?, sb_street=?, sb_postcode=?, sb_city=?, sb_state=?, sb_country=?, sb_latitude=?, sb_longitude=?, c_id=?, t_id=? 
              WHERE sb_id=?`,
-      [sb_plate, sb_latitude, sb_longitude, c_id, t_id, req.params.id]
+      [
+        sb_plate,
+        sb_floor,
+        sb_street,
+        sb_postcode,
+        sb_city,
+        sb_state,
+        sb_country,
+        sb_latitude,
+        sb_longitude,
+        c_id,
+        t_id,
+        req.params.id,
+      ]
     );
     await connection.end();
     res.json({ message: "Bin updated successfully" });

@@ -32,8 +32,12 @@ export default function Bin() {
   const [showForm, setShowForm] = useState(false);
   const [newBin, setNewBin] = useState({
     sb_plate: "",
-    sb_latitude: "",
-    sb_longitude: "",
+    sb_floor: "",
+    sb_street: "",
+    sb_postcode: "",
+    sb_city: "",
+    sb_state: "",
+    sb_country: "",
     c_id: "",
     t_id: "",
   });
@@ -117,8 +121,12 @@ export default function Bin() {
       alert("Bin created successfully!");
       setNewBin({
         sb_plate: "",
-        sb_latitude: "",
-        sb_longitude: "",
+        sb_floor: "",
+        sb_street: "",
+        sb_postcode: "",
+        sb_city: "",
+        sb_state: "",
+        sb_country: "",
         c_id: "",
         t_id: "",
       });
@@ -163,18 +171,54 @@ export default function Bin() {
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                name="sb_latitude"
-                label="Latitude"
-                value={newBin.sb_latitude}
+                name="sb_floor"
+                label="Floor/Unit No"
+                value={newBin.sb_floor}
+                onChange={handleNewBinChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="sb_street"
+                label="Street (include taman if necessary)"
+                value={newBin.sb_street}
                 onChange={handleNewBinChange}
                 fullWidth
               />
             </Grid>
             <Grid item xs={12} sm={4}>
               <TextField
-                name="sb_longitude"
-                label="Longitude"
-                value={newBin.sb_longitude}
+                name="sb_postcode"
+                label="Postcode"
+                value={newBin.sb_postcode}
+                onChange={handleNewBinChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="sb_city"
+                label="City"
+                value={newBin.sb_city}
+                onChange={handleNewBinChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="sb_state"
+                label="State"
+                value={newBin.sb_state}
+                onChange={handleNewBinChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                name="sb_country"
+                label="Country"
+                value={newBin.sb_country}
                 onChange={handleNewBinChange}
                 fullWidth
               />
@@ -244,6 +288,7 @@ export default function Bin() {
                 <TableRow>
                   <TableCell>ID</TableCell>
                   <TableCell>Plate Number</TableCell>
+                  <TableCell>Address</TableCell>
                   <TableCell>Latitude</TableCell>
                   <TableCell>Longitude</TableCell>
                   <TableCell>Customer</TableCell>
@@ -256,6 +301,11 @@ export default function Bin() {
                   <TableRow key={bin.sb_id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{bin.sb_plate}</TableCell>
+                    <TableCell>
+                      {bin.sb_floor
+                        ? `${bin.sb_floor}, ${bin.sb_street}, ${bin.sb_postcode}, ${bin.sb_city}, ${bin.sb_state}, ${bin.sb_country}`
+                        : `${bin.sb_street}, ${bin.sb_postcode}, ${bin.sb_city}, ${bin.sb_state}, ${bin.sb_country}`}
+                    </TableCell>
                     <TableCell>{bin.sb_latitude}</TableCell>
                     <TableCell>{bin.sb_longitude}</TableCell>
                     <TableCell>
@@ -299,17 +349,49 @@ export default function Bin() {
                 margin="dense"
               />
               <TextField
-                name="sb_latitude"
-                label="Latitude"
-                value={editingBin.sb_latitude}
+                name="sb_floor"
+                label="Floor/Unit No"
+                value={editingBin.sb_floor}
                 onChange={handleChange}
                 fullWidth
                 margin="dense"
               />
               <TextField
-                name="sb_longitude"
-                label="Longitude"
-                value={editingBin.sb_longitude}
+                name="sb_street"
+                label="Street (include taman if necessary)"
+                value={editingBin.sb_street}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+              />
+              <TextField
+                name="sb_postcode"
+                label="Postcode"
+                value={editingBin.sb_postcode}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+              />
+              <TextField
+                name="sb_city"
+                label="City"
+                value={editingBin.sb_city}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+              />
+              <TextField
+                name="sb_state"
+                label="State"
+                value={editingBin.sb_state}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+              />
+              <TextField
+                name="sb_country"
+                label="Country"
+                value={editingBin.sb_country}
                 onChange={handleChange}
                 fullWidth
                 margin="dense"
