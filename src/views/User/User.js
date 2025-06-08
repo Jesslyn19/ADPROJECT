@@ -27,7 +27,7 @@ import Visibility from "@material-ui/icons/Visibility";
 import VisibilityOff from "@material-ui/icons/VisibilityOff";
 
 export default function User() {
-  const [users, setusers] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -39,12 +39,13 @@ export default function User() {
     u_fname: "",
     u_lname: "",
     u_name: "",
-    U_password: "",
+    u_password: "",
     u_street: "",
     u_postcode: "",
     u_city: "",
     u_state: "",
     u_country: "",
+    u_contact: "", // Added contact field
     role_id: "",
   });
 
@@ -64,7 +65,7 @@ export default function User() {
       const res = await axios.get(`http://localhost:5000/api/users`, {
         params: { exclude: currentUserId },
       });
-      setusers(res.data);
+      setUsers(res.data);
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -118,6 +119,7 @@ export default function User() {
       "u_state",
       "u_country",
       "u_postcode",
+      "u_contact", // added to prevent punctuation in contact
     ];
 
     const filteredValue = noPunctuationFields.includes(name)
@@ -142,6 +144,7 @@ export default function User() {
       "u_state",
       "u_country",
       "u_postcode",
+      "u_contact", // added to prevent punctuation in contact
     ];
 
     const filteredValue = noPunctuationFields.includes(name)
@@ -170,6 +173,7 @@ export default function User() {
         u_city: "",
         u_state: "",
         u_country: "",
+        u_contact: "", // Reset the contact field
         role_id: "",
         u_password: "",
       });
@@ -315,6 +319,15 @@ export default function User() {
               />
             </Grid>
             <Grid item xs={12}>
+              <TextField
+                name="u_contact"
+                label="Contact Number"
+                value={newUser.u_contact}
+                onChange={handleNewUserChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12}>
               <Button
                 variant="contained"
                 color="primary"
@@ -346,6 +359,7 @@ export default function User() {
                   <TableCell>Username</TableCell>
                   <TableCell>Role</TableCell>
                   <TableCell>Address</TableCell>
+                  <TableCell>Contact</TableCell> {/* Added Contact */}
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -369,6 +383,7 @@ export default function User() {
                         ", " +
                         (user.u_country || "")}
                     </TableCell>
+                    <TableCell>{user.u_contact}</TableCell>
                     <TableCell>
                       <Button color="primary" onClick={() => handleEdit(user)}>
                         Edit
@@ -488,6 +503,14 @@ export default function User() {
                 name="u_country"
                 label="Country"
                 value={editingUser.u_country}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+              />
+              <TextField
+                name="u_contact"
+                label="Contact Number"
+                value={editingUser.u_contact}
                 onChange={handleChange}
                 fullWidth
                 margin="dense"

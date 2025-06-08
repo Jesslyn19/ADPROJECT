@@ -34,6 +34,7 @@ export default function Customer() {
     c_city: "",
     c_state: "",
     c_country: "",
+    c_contact: "",
   });
 
   const fetchCustomers = async () => {
@@ -106,6 +107,7 @@ export default function Customer() {
         c_city: "",
         c_state: "",
         c_country: "",
+        c_contact: "", // Reset the contact field
       });
       setShowForm(false);
     } catch (error) {
@@ -192,6 +194,15 @@ export default function Customer() {
               />
             </Grid>
             <Grid item xs={12}>
+              <TextField
+                name="c_contact"
+                label="Contact Number"
+                value={newCustomer.c_contact}
+                onChange={handleNewCustomerChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12}>
               <Button
                 variant="contained"
                 color="primary"
@@ -220,11 +231,8 @@ export default function Customer() {
                 <TableRow>
                   <TableCell>ID</TableCell>
                   <TableCell>Name</TableCell>
-                  <TableCell>Street</TableCell>
-                  <TableCell>Postcode</TableCell>
-                  <TableCell>City</TableCell>
-                  <TableCell>State</TableCell>
-                  <TableCell>Country</TableCell>
+                  <TableCell>Address</TableCell>
+                  <TableCell>Contact</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -233,11 +241,18 @@ export default function Customer() {
                   <TableRow key={customer.c_id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{customer.c_name}</TableCell>
-                    <TableCell>{customer.c_street}</TableCell>
-                    <TableCell>{customer.c_postcode}</TableCell>
-                    <TableCell>{customer.c_city}</TableCell>
-                    <TableCell>{customer.c_state}</TableCell>
-                    <TableCell>{customer.c_country}</TableCell>
+                    <TableCell>
+                      {(customer.c_street || "") +
+                        ", " +
+                        (customer.c_city || "") +
+                        ", " +
+                        (customer.c_postcode || "") +
+                        ", " +
+                        (customer.c_state || "") +
+                        ", " +
+                        (customer.c_country || "")}
+                    </TableCell>
+                    <TableCell>{customer.c_contact}</TableCell>
                     <TableCell>
                       <Button
                         color="primary"
@@ -309,6 +324,14 @@ export default function Customer() {
                 name="c_country"
                 label="Country"
                 value={editingCustomer.c_country}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+              />
+              <TextField
+                name="c_contact"
+                label="Contact Number"
+                value={editingCustomer.c_contact}
                 onChange={handleChange}
                 fullWidth
                 margin="dense"

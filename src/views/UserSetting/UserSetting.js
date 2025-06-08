@@ -32,6 +32,7 @@ const UserSetting = () => {
     role_name: "",
     u_status: "",
     s_name: "",
+    u_contact: "", // added contact field
   });
 
   const [avatarKey, setAvatarKey] = useState(0);
@@ -110,6 +111,7 @@ const UserSetting = () => {
         alert(err.response?.data?.message || "Failed to update password.");
       });
   };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -287,6 +289,9 @@ const UserSetting = () => {
             <Typography variant="body1" color="textSecondary">
               Username: {user.u_name}
             </Typography>
+            <Typography variant="body1" color="textSecondary">
+              Contact: {user.u_contact} {/* Display contact */}
+            </Typography>
           </Box>
 
           {/* Right: Form */}
@@ -404,6 +409,16 @@ const UserSetting = () => {
                         }
                       />
                     </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Contact Number"
+                        value={user.u_contact}
+                        onChange={(e) =>
+                          setUser({ ...user, u_contact: e.target.value })
+                        }
+                      />
+                    </Grid>
                     <Grid item xs={12} style={{ display: "flex", gap: "16px" }}>
                       <button
                         onClick={handleUpdate}
@@ -491,103 +506,6 @@ const UserSetting = () => {
                 </CardContent>
               </Card>
             )}
-
-            {/* Read-only View */}
-            <Card>
-              <CardContent>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="First Name"
-                      value={user.u_fname}
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Last Name"
-                      value={user.u_lname}
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Username"
-                      value={user.u_name}
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Password"
-                      value={user.u_password}
-                      type="password"
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Street"
-                      value={user.u_street}
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="City"
-                      value={user.u_city}
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Postcode"
-                      value={user.u_postcode}
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="State"
-                      value={user.u_state}
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Country"
-                      value={user.u_country}
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Role"
-                      value={user.role_name || ""}
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Status"
-                      value={user.s_name || ""}
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
           </Box>
         </Box>
       </Paper>

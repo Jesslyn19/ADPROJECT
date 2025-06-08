@@ -34,31 +34,30 @@ app.use(express.static(path.join(__dirname, "public")));
 app.post("/api/login", async (req, res) => {
   const { u_name, u_password } = req.body;
 
-   try {
+  try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-        `SELECT tb_user.u_id, tb_user.role_id, tb_role.role_name 
+      `SELECT tb_user.u_id, tb_user.role_id, tb_role.role_name 
         FROM tb_user 
         JOIN tb_role ON tb_user.role_id = tb_role.role_id 
         WHERE BINARY tb_user.u_name = ? AND BINARY tb_user.u_password = ? AND tb_user.u_status=1`,
-        [u_name, u_password]
-      );
-        await connection.end();
-        if (rows.length > 0) {
-          res.json({
-            success: true,
-            role_id: rows[0].role_id,
-            u_id: rows[0].u_id,
-            role_name: rows[0].role_name,
-          });
-        } else {
-          res.json({ success: false, message: "Invalid credentials" });
-        }
-        } catch (error) {
-          res.status(500).json({ success: false, error: error.message });
-          }
-  });
-
+      [u_name, u_password]
+    );
+    await connection.end();
+    if (rows.length > 0) {
+      res.json({
+        success: true,
+        role_id: rows[0].role_id,
+        u_id: rows[0].u_id,
+        role_name: rows[0].role_name,
+      });
+    } else {
+      res.json({ success: false, message: "Invalid credentials" });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // GET all images
 app.get("/api/images", async (req, res) => {
@@ -178,15 +177,17 @@ app.get("/api/customers", async (req, res) => {
 
 // CREATE a new customer
 app.post("/api/customers", async (req, res) => {
-  const { c_name, c_street, c_postcode, c_city, c_state, c_country } = req.body;
+  const { c_name, c_street, c_postcode, c_city, c_state, c_country, c_contact } = req.body;
 
+  // Validate all fields including contact
   if (
     !c_name ||
     !c_street ||
     !c_postcode ||
     !c_city ||
     !c_state ||
-    !c_country
+    !c_country ||
+    !c_contact
   ) {
     return res.status(400).json({ error: "All fields are required" });
   }
@@ -195,9 +196,9 @@ app.post("/api/customers", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [result] = await connection.execute(
-      `INSERT INTO tb_customer (c_name, c_street, c_postcode, c_city, c_state, c_country) 
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      [c_name, c_street, c_postcode, c_city, c_state, c_country]
+      `INSERT INTO tb_customer (c_name, c_street, c_postcode, c_city, c_state, c_country, c_contact) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [c_name, c_street, c_postcode, c_city, c_state, c_country, c_contact]  // Added c_contact
     );
     await connection.end();
 
@@ -214,14 +215,14 @@ app.post("/api/customers", async (req, res) => {
 
 // UPDATE a customer
 app.put("/api/customers/:id", async (req, res) => {
-  const { c_name, c_street, c_postcode, c_city, c_state, c_country } = req.body;
+  const { c_name, c_street, c_postcode, c_city, c_state, c_country, c_contact } = req.body;
   try {
     const connection = await mysql.createConnection(dbConfig);
     await connection.execute(
       `UPDATE tb_customer 
-             SET c_name=?, c_street=?, c_postcode=?, c_city=?, c_state=?, c_country=? 
+             SET c_name=?, c_street=?, c_postcode=?, c_city=?, c_state=?, c_country=?, c_contact=? 
              WHERE c_id=?`,
-      [c_name, c_street, c_postcode, c_city, c_state, c_country, req.params.id]
+      [c_name, c_street, c_postcode, c_city, c_state, c_country, c_contact, req.params.id]  // Added c_contact
     );
     await connection.end();
     res.json({ message: "Customer updated successfully" });
@@ -290,6 +291,7 @@ app.get("/api/roles", async (req, res) => {
   }
 });
 
+// CREATE a new user
 app.post("/api/users", async (req, res) => {
   console.log("POST /api/users body:", req.body);
 
@@ -304,8 +306,10 @@ app.post("/api/users", async (req, res) => {
     u_country,
     role_id,
     u_password,
+    u_contact, // added contact field
   } = req.body;
 
+  // Ensure all fields are provided, including u_contact
   if (
     !u_fname ||
     !u_lname ||
@@ -316,7 +320,8 @@ app.post("/api/users", async (req, res) => {
     !u_state ||
     !u_country ||
     !role_id ||
-    !u_password
+    !u_password ||
+    !u_contact // added contact field validation
   ) {
     return res.status(400).json({ error: "All fields are required" });
   }
@@ -324,8 +329,8 @@ app.post("/api/users", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [result] = await connection.execute(
-      `INSERT INTO tb_user (u_fname, u_lname, u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO tb_user (u_fname, u_lname, u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password, u_contact) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // added u_contact
       [
         u_fname,
         u_lname,
@@ -337,6 +342,7 @@ app.post("/api/users", async (req, res) => {
         u_country,
         role_id,
         u_password,
+        u_contact, // added u_contact
       ]
     );
     await connection.end();
@@ -364,13 +370,15 @@ app.put("/api/users/:id", async (req, res) => {
     u_country,
     role_id,
     u_password,
+    u_contact, // added contact field
   } = req.body;
+
   try {
     const connection = await mysql.createConnection(dbConfig);
     await connection.execute(
       `UPDATE tb_user 
-             SET u_fname=?, u_lname=?, u_name=?, u_street=?, u_postcode=?, u_city=?, u_state=?, u_country=?, role_id=?, u_password=?
-             WHERE u_id=?`,
+             SET u_fname=?, u_lname=?, u_name=?, u_street=?, u_postcode=?, u_city=?, u_state=?, u_country=?, role_id=?, u_password=?, u_contact=? 
+             WHERE u_id=?`, // added u_contact
       [
         u_fname,
         u_lname,
@@ -382,6 +390,7 @@ app.put("/api/users/:id", async (req, res) => {
         u_country,
         role_id,
         u_password,
+        u_contact, // added u_contact
         req.params.id,
       ]
     );
@@ -868,7 +877,10 @@ app.post(
       await connection.end();
 
       const fullImageUrl = `http://localhost:5000/uploads/${imageUrl}`;
-      res.json({ message: "Image uploaded and user updated", imageUrl: fullImageUrl });
+      res.json({
+        message: "Image uploaded and user updated",
+        imageUrl: fullImageUrl,
+      });
     } catch (error) {
       console.error("Error uploading image", error);
       res.status(500).json({ error: error.message });
