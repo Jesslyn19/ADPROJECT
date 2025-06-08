@@ -177,7 +177,15 @@ app.get("/api/customers", async (req, res) => {
 
 // CREATE a new customer
 app.post("/api/customers", async (req, res) => {
-  const { c_name, c_street, c_postcode, c_city, c_state, c_country, c_contact } = req.body;
+  const {
+    c_name,
+    c_street,
+    c_postcode,
+    c_city,
+    c_state,
+    c_country,
+    c_contact,
+  } = req.body;
 
   // Validate all fields including contact
   if (
@@ -198,7 +206,7 @@ app.post("/api/customers", async (req, res) => {
     const [result] = await connection.execute(
       `INSERT INTO tb_customer (c_name, c_street, c_postcode, c_city, c_state, c_country, c_contact) 
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [c_name, c_street, c_postcode, c_city, c_state, c_country, c_contact]  // Added c_contact
+      [c_name, c_street, c_postcode, c_city, c_state, c_country, c_contact] // Added c_contact
     );
     await connection.end();
 
@@ -215,14 +223,31 @@ app.post("/api/customers", async (req, res) => {
 
 // UPDATE a customer
 app.put("/api/customers/:id", async (req, res) => {
-  const { c_name, c_street, c_postcode, c_city, c_state, c_country, c_contact } = req.body;
+  const {
+    c_name,
+    c_street,
+    c_postcode,
+    c_city,
+    c_state,
+    c_country,
+    c_contact,
+  } = req.body;
   try {
     const connection = await mysql.createConnection(dbConfig);
     await connection.execute(
       `UPDATE tb_customer 
              SET c_name=?, c_street=?, c_postcode=?, c_city=?, c_state=?, c_country=?, c_contact=? 
              WHERE c_id=?`,
-      [c_name, c_street, c_postcode, c_city, c_state, c_country, c_contact, req.params.id]  // Added c_contact
+      [
+        c_name,
+        c_street,
+        c_postcode,
+        c_city,
+        c_state,
+        c_country,
+        c_contact,
+        req.params.id,
+      ] // Added c_contact
     );
     await connection.end();
     res.json({ message: "Customer updated successfully" });
@@ -773,6 +798,7 @@ app.patch("/api/users/:id", async (req, res) => {
     u_country,
     u_password,
     u_url,
+    u_contact,
   } = req.body;
 
   try {
@@ -788,7 +814,8 @@ app.patch("/api/users/:id", async (req, res) => {
          u_state = ?, 
          u_country = ?, 
          u_password = ?, 
-         u_url = ?
+         u_url = ?,
+         u_contact= ?
        WHERE u_id = ?`,
       [
         u_fname,
@@ -800,6 +827,7 @@ app.patch("/api/users/:id", async (req, res) => {
         u_country,
         u_password,
         u_url,
+        u_contact,
         userId,
       ]
     );
