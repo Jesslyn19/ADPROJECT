@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import {
   Box,
@@ -43,30 +43,48 @@ export default function ImagePage() {
     }
   };
 
+  const intervalRef = useRef(null);
+
   const refreshProcessing = async () => {
     setLoading(true);
     setStatusMessage("Start Processing...");
 
+    // Step 2: Start auto-refresh every 5 seconds
+    intervalRef.current = setInterval(() => {
+      fetchImages();
+    }, 5000);
+
     try {
       const res = await axios.post("http://localhost:5000/api/refresh");
-      console.log("Refresh API response:", res.data); // ← ADD THIS
-
+      console.log("Refresh API response:", res.data);
       await fetchImages();
     } catch (error) {
       console.error("Error refreshing images:", error);
       setStatusMessage("Failed to refresh images.");
     } finally {
+      // Step 3: End auto-refresh after short delay (simulate async processing complete)
       setTimeout(() => {
-        setStatusMessage(`Done`);
-        setTimeout(() => setStatusMessage(""), 2000); // Clear after 5s
-      });
-      setLoading(false);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        setStatusMessage("Done");
+        setLoading(false);
+
+        setTimeout(() => setStatusMessage(""), 2000); // Clear message
+      }, 2000); // Adjust if needed based on how long your backend takes
     }
   };
 
   useEffect(() => {
     fetchImages();
     fetchSmartBins();
+    return () => {
+      // Clear interval when component unmounts
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, []);
 
   const filteredAndSortedImages = images
@@ -385,7 +403,7 @@ export default function ImagePage() {
               try {
                 await axios.put(
                   `http://localhost:5000/api/images/${editImage.i_id}`,
-                  { i_plate: editPlate }
+                  { i_plate: editPlate.trim().toUpperCase() }
                 );
                 setOpenEdit(false);
                 fetchImages();
