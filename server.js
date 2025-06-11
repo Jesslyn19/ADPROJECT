@@ -735,7 +735,7 @@ app.get("/api/reports", async (req, res) => {
     const [rows] = await connection.execute(
       `SELECT r_id, r_subject, r_content, r_image, r_writer, r_datetime 
        FROM tb_report 
-       WHERE status = 1`
+       WHERE r_status = 1`
     );
     await connection.end();
 
