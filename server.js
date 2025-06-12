@@ -714,6 +714,28 @@ app.post("/api/create_report", upload.single("image"), async (req, res) => {
   }
 });
 
+// GET current user name
+app.get("/api/username/:currentuserid", async (req, res) => {
+  try {
+    const { currentuserid } = req.params;
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      `SELECT u_fname, u_lname FROM tb_user WHERE u_id = ?`,
+      [currentuserid] // 🔥 Add parameter here!
+    );
+    await connection.end();
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(rows[0]); // ✅ Send just the first object
+  } catch (error) {
+    console.error("Error in /api/username/:currentuserid:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // delete a report
 app.delete("/api/reports/:id", async (req, res) => {
   try {

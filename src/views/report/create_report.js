@@ -6,6 +6,8 @@ export default function Report() {
   // eslint-disable-next-line no-unused-vars
   const [reports, setReports] = useState([]);
   // eslint-disable-next-line no-unused-vars
+  const [users, setUsers] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
   const [creating, setCreating] = useState(false);
@@ -16,6 +18,33 @@ export default function Report() {
     r_image: "",
     r_writer: "",
   });
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const currentUserId = localStorage.getItem("userId");
+      console.log("User ID from localStorage:", currentUserId);
+
+      const res = await axios.get(
+        `http://localhost:5000/api/username/${currentUserId}`
+      );
+
+      const user = res.data; // ✅ Now this is a single object
+      console.log("Fetched user:", user);
+
+      const fullName = `${user.u_fname} ${user.u_lname}`;
+
+      setUsers([user]); // Optional
+      setNewReport((prev) => ({
+        ...prev,
+        r_writer: fullName,
+      }));
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchReports = async () => {
     setLoading(true);
@@ -82,6 +111,10 @@ export default function Report() {
     fetchReports();
   }, []);
 
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   return (
     <div style={{ padding: 9 }}>
       <Paper style={{ padding: 20 }}>
@@ -97,6 +130,7 @@ export default function Report() {
               onChange={handleNewReportChange}
               fullWidth
               required
+              disabled
             />
           </Grid>
           <Grid item xs={12}>
