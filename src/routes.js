@@ -119,7 +119,7 @@ const dashboardRoutes = [
   },
   {
     path: "/report",
-    name: "Report",
+    name: "Issues Reported",
     icon: AssignmentLate,
     component: Report,
     layout: "/admin",

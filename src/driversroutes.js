@@ -60,7 +60,7 @@ const dashboardRoutes = [
   },
   {
     path: "/report",
-    name: "Write Report",
+    name: "Report Issue",
     icon: CreateIcon,
     component: createReport,
     layout: "/driver",

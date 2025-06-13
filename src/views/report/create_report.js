@@ -119,7 +119,7 @@ export default function Report() {
     <div style={{ padding: 9 }}>
       <Paper style={{ padding: 20 }}>
         <Typography variant="h5" gutterBottom>
-          Create New Report
+          Report New Issue
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={12}>
