@@ -27,6 +27,7 @@ import Visibility from "@material-ui/icons/Visibility";
 import VisibilityOff from "@material-ui/icons/VisibilityOff";
 
 export default function User() {
+  const [errors, setErrors] = useState({});
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -48,6 +49,36 @@ export default function User() {
     u_contact: "", // Added contact field
     role_id: "",
   });
+
+  const requiredFields = [
+    "u_fname",
+    "u_lname",
+    "role_id",
+    "u_name",
+    "u_password",
+    "u_street",
+    "u_city",
+    "u_postcode",
+    "u_state",
+    "u_country",
+    "u_contact",
+  ];
+
+  const isEmpty = (v) => {
+    if (v === undefined || v === null) return true;
+    if (typeof v === "string") return v.trim() === "";
+    // treat 0, NaN, or '' as empty only if you want to forbid them
+    return false;
+  };
+
+  const validate = (data) => {
+    const newErrors = {};
+    requiredFields.forEach((key) => {
+      if (isEmpty(data[key])) newErrors[key] = true;
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const fetchRoles = async () => {
     try {
@@ -136,7 +167,7 @@ export default function User() {
     const { name, value } = e.target;
 
     // List of fields that should NOT have punctuation
-    const noPunctuationFields = [
+    const noPunctuation = [
       "u_fname",
       "u_lname",
       "u_street",
@@ -147,18 +178,29 @@ export default function User() {
       "u_contact", // added to prevent punctuation in contact
     ];
 
-    const filteredValue = noPunctuationFields.includes(name)
-      ? value.replace(/[^\w\s]/gi, "") // remove punctuation
+    const clean = noPunctuation.includes(name)
+      ? value.replace(/[^\w\s]/g, "") // remove punctuation
       : value;
 
     setNewUser((prev) => ({
       ...prev,
-      [name]: filteredValue,
+      [name]: clean,
+    }));
+    setErrors((prev) => ({
+      ...prev,
+      [name]: false,
     }));
   };
 
   const handleCreateUser = async () => {
     if (creating) return;
+
+    if (!validate(newUser)) {
+      // quick global hint – individual fields already turn red
+      alert("Please fill in all required fields.");
+      return;
+    }
+
     setCreating(true);
     try {
       await axios.post("http://localhost:5000/api/users", newUser);
@@ -214,6 +256,9 @@ export default function User() {
                 label="First Name"
                 value={newUser.u_fname}
                 onChange={handleNewUserChange}
+                error={Boolean(errors.u_fname)}
+                helperText={errors.u_fname && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -223,6 +268,9 @@ export default function User() {
                 label="Last Name"
                 value={newUser.u_lname}
                 onChange={handleNewUserChange}
+                error={Boolean(errors.u_lname)}
+                helperText={errors.u_lname && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -233,6 +281,9 @@ export default function User() {
                 label="Role"
                 value={newUser.role_id}
                 onChange={handleNewUserChange}
+                error={Boolean(errors.role_id)}
+                helperText={errors.role_id && "Please fill out this field"}
+                required
                 fullWidth
               >
                 {roles.map((role) => (
@@ -248,6 +299,9 @@ export default function User() {
                 label="Username"
                 value={newUser.u_name}
                 onChange={handleNewUserChange}
+                error={Boolean(errors.u_name)}
+                helperText={errors.u_name && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -258,6 +312,9 @@ export default function User() {
                 type={showPassword ? "text" : "password"} // 👈 Toggle between text & password
                 value={newUser.u_password}
                 onChange={handleNewUserChange}
+                error={Boolean(errors.u_password)}
+                helperText={errors.u_password && "Please fill out this field"}
+                required
                 fullWidth
                 InputProps={{
                   endAdornment: (
@@ -279,6 +336,9 @@ export default function User() {
                 label="Street"
                 value={newUser.u_street}
                 onChange={handleNewUserChange}
+                error={Boolean(errors.u_street)}
+                helperText={errors.u_street && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -288,6 +348,9 @@ export default function User() {
                 label="City"
                 value={newUser.u_city}
                 onChange={handleNewUserChange}
+                error={Boolean(errors.u_city)}
+                helperText={errors.u_city && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -297,6 +360,9 @@ export default function User() {
                 label="Postcode"
                 value={newUser.u_postcode}
                 onChange={handleNewUserChange}
+                error={Boolean(errors.u_postcode)}
+                helperText={errors.u_postcode && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -306,6 +372,9 @@ export default function User() {
                 label="State"
                 value={newUser.u_state}
                 onChange={handleNewUserChange}
+                error={Boolean(errors.u_state)}
+                helperText={errors.u_state && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -315,6 +384,9 @@ export default function User() {
                 label="Country"
                 value={newUser.u_country}
                 onChange={handleNewUserChange}
+                error={Boolean(errors.u_country)}
+                helperText={errors.u_country && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -324,6 +396,9 @@ export default function User() {
                 label="Contact Number"
                 value={newUser.u_contact}
                 onChange={handleNewUserChange}
+                error={Boolean(errors.u_contact)}
+                helperText={errors.u_contact && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
