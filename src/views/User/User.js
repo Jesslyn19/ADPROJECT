@@ -136,6 +136,15 @@ export default function User() {
       alert("User updated successfully!");
     } catch (error) {
       console.error("Error updating user:", error);
+
+      if (
+        error.response?.status === 400 &&
+        error.response.data?.field === "u_name"
+      ) {
+        alert("Username already taken.");
+      } else {
+        alert("Failed to update user.");
+      }
     }
   };
 
@@ -188,7 +197,7 @@ export default function User() {
     }));
     setErrors((prev) => ({
       ...prev,
-      [name]: false,
+      [name]: undefined,
     }));
   };
 
@@ -222,7 +231,15 @@ export default function User() {
       setShowForm(false);
     } catch (error) {
       console.error("Error creating user:", error);
-      alert("Failed to create user.");
+      if (
+        error.response?.status === 400 &&
+        error.response.data?.field === "u_name"
+      ) {
+        // mark this as a "duplicate" error
+        setErrors((prev) => ({ ...prev, u_name: "duplicate" }));
+      } else {
+        alert("Failed to create user.");
+      }
     } finally {
       setCreating(false);
     }
@@ -300,7 +317,13 @@ export default function User() {
                 value={newUser.u_name}
                 onChange={handleNewUserChange}
                 error={Boolean(errors.u_name)}
-                helperText={errors.u_name && "Please fill out this field"}
+                helperText={
+                  errors.u_name === true
+                    ? "Please fill out this field"
+                    : errors.u_name === "duplicate"
+                    ? "Username already taken"
+                    : ""
+                }
                 required
                 fullWidth
               />

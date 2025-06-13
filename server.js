@@ -287,9 +287,25 @@ app.delete("/api/customers/:id", async (req, res) => {
 
 app.get("/api/users", async (req, res) => {
   const excludeId = req.query.exclude;
+  const u_name = req.query.u_name;
 
   try {
     const connection = await mysql.createConnection(dbConfig);
+
+    if (u_name) {
+      const [existing] = await connection.execute(
+        "SELECT u_id FROM tb_user WHERE u_name = ?",
+        [u_name]
+      );
+
+      if (existing.length > 0) {
+        await connection.end();
+        return res.status(400).json({
+          field: "u_name",
+          message: "Username already taken",
+        });
+    }
+  }
 
     let query = `
       SELECT u.*, r.role_name, s.s_name
@@ -368,6 +384,20 @@ app.post("/api/users", async (req, res) => {
 
   try {
     const connection = await mysql.createConnection(dbConfig);
+
+    const [existing] = await connection.execute(
+      "SELECT u_id FROM tb_user WHERE u_name = ?",
+      [u_name]
+    );
+
+    if (existing.length > 0) {
+      await connection.end();
+      return res.status(400).json({
+        field: "u_name",
+        message: "Username already taken",
+      });
+    }
+    
     const [result] = await connection.execute(
       `INSERT INTO tb_user (u_fname, u_lname, u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password, u_contact) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // added u_contact
@@ -415,6 +445,16 @@ app.put("/api/users/:id", async (req, res) => {
 
   try {
     const connection = await mysql.createConnection(dbConfig);
+
+    const [existing] = await connection.execute(
+      "SELECT u_id FROM tb_user WHERE u_name = ? AND u_id != ?",
+      [u_name, req.params.id]
+    );
+
+    if (existing.length > 0) {
+      await connection.end();
+      return res.status(400).json({ field: "u_name", message: "Username already taken" });
+    }
     await connection.execute(
       `UPDATE tb_user 
              SET u_fname=?, u_lname=?, u_name=?, u_street=?, u_postcode=?, u_city=?, u_state=?, u_country=?, role_id=?, u_password=?, u_contact=? 
