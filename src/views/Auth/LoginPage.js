@@ -10,6 +10,7 @@ const LoginPage = () => {
   const [u_name, setUName] = useState("");
   const [u_password, setUPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const history = useHistory();
 
   const handleLogin = async (e) => {
@@ -157,24 +158,46 @@ const LoginPage = () => {
             >
               Password
             </label>
-            <input
-              type="password"
-              value={u_password}
-              onChange={(e) => setUPassword(e.target.value)}
-              required
-              style={{
-                width: "100%",
-                padding: "12px",
-                marginBottom: "16px",
-                borderRadius: "8px",
-                border: "1.8px solid #ccc",
-                fontSize: "16px",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-              onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-              onBlur={(e) => (e.target.style.borderColor = "#ccc")}
-            />
+            <div style={{ position: "relative", marginBottom: "16px" }}>
+              <input
+                type={showPassword ? "text" : "password"} // NEW
+                value={u_password}
+                onChange={(e) => setUPassword(e.target.value)}
+                required
+                style={{
+                  width: "100%",
+                  padding: "12px 48px 12px 12px", // leave space for the icon
+                  borderRadius: "8px",
+                  border: "1.8px solid #ccc",
+                  fontSize: "16px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#667eea")}
+                onBlur={(e) => (e.target.style.borderColor = "#ccc")}
+              />
+
+              {/* Toggle button */}
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                style={{
+                  position: "absolute",
+                  right: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "18px",
+                  padding: 0,
+                  color: "#667eea",
+                }}
+              >
+                {showPassword ? "🙈" : "👁️"} {/* or swap in any icon library */}
+              </button>
+            </div>
 
             {error && (
               <p

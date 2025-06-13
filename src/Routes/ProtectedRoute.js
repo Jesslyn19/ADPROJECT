@@ -11,6 +11,7 @@ const ProtectedRoute = ({ component: Component, allowedRoles, ...rest }) => {
 
   if (!sessionExpiry || currentTime > sessionExpiry) {
     // Session expired - clear storage and redirect
+    alert("Your session expired. Please log in again.");
     localStorage.clear();
     return <Redirect to="/login" />;
   }
