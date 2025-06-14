@@ -732,16 +732,16 @@ const upload = multer({ storage: storage });
 
 // Create new report
 app.post("/api/create_report", upload.single("image"), async (req, res) => {
-  const { writer, subject, content } = req.body;
+  const { writer, subject, content, u_id } = req.body;
   const image = req.file
     ? `http://localhost:5000/uploads/${req.file.filename}`
     : null;
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [result] = await connection.execute(
-      `INSERT INTO tb_report (r_subject, r_content, r_image, r_writer, r_datetime)
-       VALUES (?, ?, ?, ?, NOW())`,
-      [subject, content, image, writer]
+      `INSERT INTO tb_report (r_subject, r_content, r_image, r_writer, r_datetime, u_id)
+       VALUES (?, ?, ?, ?, NOW(), ?)`,
+      [subject, content, image, writer, u_id]
     );
 
     await connection.end();

@@ -76,9 +76,13 @@ export default function Report() {
     setCreating(true);
     try {
       const formData = new FormData();
+
+      const currentUserId = localStorage.getItem("userId"); // ✅ Get u_id
+      formData.append("u_id", currentUserId); // ✅ Append it to the form
       formData.append("writer", newReport.r_writer);
       formData.append("subject", newReport.r_subject);
       formData.append("content", newReport.r_content);
+
       if (image) {
         formData.append("image", image); // Must match `upload.single("image")`
       }
