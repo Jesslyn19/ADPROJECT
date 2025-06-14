@@ -291,7 +291,7 @@ export default function User() {
                 fullWidth
               />
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={6}>
               <TextField
                 select
                 name="role_id"
@@ -310,7 +310,19 @@ export default function User() {
                 ))}
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={6}>
+              <TextField
+                name="u_contact"
+                label="Contact Number"
+                value={newUser.u_contact}
+                onChange={handleNewUserChange}
+                error={Boolean(errors.u_contact)}
+                helperText={errors.u_contact && "Please fill out this field"}
+                required
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
               <TextField
                 name="u_name"
                 label="Username"
@@ -328,7 +340,7 @@ export default function User() {
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 name="u_password"
                 label="Password"
@@ -409,18 +421,6 @@ export default function User() {
                 onChange={handleNewUserChange}
                 error={Boolean(errors.u_country)}
                 helperText={errors.u_country && "Please fill out this field"}
-                required
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                name="u_contact"
-                label="Contact Number"
-                value={newUser.u_contact}
-                onChange={handleNewUserChange}
-                error={Boolean(errors.u_contact)}
-                helperText={errors.u_contact && "Please fill out this field"}
                 required
                 fullWidth
               />
