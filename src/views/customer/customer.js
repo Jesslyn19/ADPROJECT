@@ -21,6 +21,7 @@ import {
 } from "@material-ui/core";
 
 export default function Customer() {
+  const [errors, setErrors] = useState({});
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -36,6 +37,31 @@ export default function Customer() {
     c_country: "",
     c_contact: "",
   });
+
+  const requiredFields = [
+    "c_name",
+    "c_street",
+    "c_postcode",
+    "c_city",
+    "c_state",
+    "c_country",
+    "c_contact",
+  ];
+
+  const isEmpty = (v) => {
+    if (v === undefined || v === null) return true;
+    if (typeof v === "string") return v.trim() === "";
+    return false;
+  };
+
+  const validate = (data) => {
+    const newErrors = {};
+    requiredFields.forEach((key) => {
+      if (isEmpty(data[key])) newErrors[key] = "This field is required";
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -71,6 +97,12 @@ export default function Customer() {
   };
 
   const handleDialogSave = async () => {
+    // Validate the fields before proceeding
+    if (!validate(editingCustomer)) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
     try {
       await axios.put(
         `http://localhost:5000/api/customers/${editingCustomer.c_id}`,
@@ -78,23 +110,42 @@ export default function Customer() {
       );
       fetchCustomers();
       handleDialogClose();
+      alert("Customer updated successfully!");
     } catch (error) {
       console.error("Error updating customer:", error);
+      alert("Failed to update customer.");
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditingCustomer({ ...editingCustomer, [name]: value });
+    setEditingCustomer((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleNewCustomerChange = (e) => {
     const { name, value } = e.target;
-    setNewCustomer({ ...newCustomer, [name]: value });
+    setNewCustomer((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setErrors((prev) => ({
+      ...prev,
+      [name]: undefined,
+    }));
   };
 
   const handleCreateCustomer = async () => {
     if (creating) return;
+
+    // Validate the fields before proceeding
+    if (!validate(newCustomer)) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
     setCreating(true);
     try {
       await axios.post("http://localhost:5000/api/customers", newCustomer);
@@ -107,7 +158,7 @@ export default function Customer() {
         c_city: "",
         c_state: "",
         c_country: "",
-        c_contact: "", // Reset the contact field
+        c_contact: "",
       });
       setShowForm(false);
     } catch (error) {
@@ -145,6 +196,9 @@ export default function Customer() {
                 label="Name"
                 value={newCustomer.c_name}
                 onChange={handleNewCustomerChange}
+                error={Boolean(errors.c_name)}
+                helperText={errors.c_name && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -154,6 +208,9 @@ export default function Customer() {
                 label="Street"
                 value={newCustomer.c_street}
                 onChange={handleNewCustomerChange}
+                error={Boolean(errors.c_street)}
+                helperText={errors.c_street && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -163,6 +220,9 @@ export default function Customer() {
                 label="Postcode"
                 value={newCustomer.c_postcode}
                 onChange={handleNewCustomerChange}
+                error={Boolean(errors.c_postcode)}
+                helperText={errors.c_postcode && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -172,6 +232,9 @@ export default function Customer() {
                 label="City"
                 value={newCustomer.c_city}
                 onChange={handleNewCustomerChange}
+                error={Boolean(errors.c_city)}
+                helperText={errors.c_city && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -181,6 +244,9 @@ export default function Customer() {
                 label="State"
                 value={newCustomer.c_state}
                 onChange={handleNewCustomerChange}
+                error={Boolean(errors.c_state)}
+                helperText={errors.c_state && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -190,6 +256,9 @@ export default function Customer() {
                 label="Country"
                 value={newCustomer.c_country}
                 onChange={handleNewCustomerChange}
+                error={Boolean(errors.c_country)}
+                helperText={errors.c_country && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>
@@ -199,6 +268,9 @@ export default function Customer() {
                 label="Contact Number"
                 value={newCustomer.c_contact}
                 onChange={handleNewCustomerChange}
+                error={Boolean(errors.c_contact)}
+                helperText={errors.c_contact && "Please fill out this field"}
+                required
                 fullWidth
               />
             </Grid>

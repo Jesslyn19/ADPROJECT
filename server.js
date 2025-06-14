@@ -304,8 +304,8 @@ app.get("/api/users", async (req, res) => {
           field: "u_name",
           message: "Username already taken",
         });
+      }
     }
-  }
 
     let query = `
       SELECT u.*, r.role_name, s.s_name
@@ -397,7 +397,7 @@ app.post("/api/users", async (req, res) => {
         message: "Username already taken",
       });
     }
-    
+
     const [result] = await connection.execute(
       `INSERT INTO tb_user (u_fname, u_lname, u_name, u_street, u_postcode, u_city, u_state, u_country, role_id, u_password, u_contact) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // added u_contact
@@ -453,7 +453,9 @@ app.put("/api/users/:id", async (req, res) => {
 
     if (existing.length > 0) {
       await connection.end();
-      return res.status(400).json({ field: "u_name", message: "Username already taken" });
+      return res
+        .status(400)
+        .json({ field: "u_name", message: "Username already taken" });
     }
     await connection.execute(
       `UPDATE tb_user 
