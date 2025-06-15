@@ -16,8 +16,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Typography,
   Grid,
+  Typography,
   MenuItem,
 } from "@material-ui/core";
 
@@ -34,6 +34,7 @@ export default function Truck() {
     driver_id: "",
     t_capacity: "",
   });
+  const [searchQuery, setSearchQuery] = useState(""); // State for search query
   const [errors, setErrors] = useState({});
 
   const requiredFields = ["t_plate", "driver_id", "t_capacity"];
@@ -53,7 +54,6 @@ export default function Truck() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Check if the truck number plate is already registered (for duplicate check)
   const checkDuplicatePlate = async (plate) => {
     try {
       const res = await axios.get(
@@ -66,7 +66,6 @@ export default function Truck() {
     }
   };
 
-  // Fetch trucks from the API
   const fetchTrucks = async () => {
     setLoading(true);
     try {
@@ -79,7 +78,6 @@ export default function Truck() {
     }
   };
 
-  // Fetch drivers from the API
   const fetchDrivers = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/drivers?role=2");
@@ -94,7 +92,6 @@ export default function Truck() {
     fetchDrivers();
   }, []);
 
-  // Handle deleting a truck
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this truck?")) {
       try {
@@ -106,21 +103,17 @@ export default function Truck() {
     }
   };
 
-  // Open the edit dialog and set truck data for editing
   const handleEdit = (truck) => {
     setEditingTruck({ ...truck });
     setOpenDialog(true);
   };
 
-  // Close the dialog
   const handleDialogClose = () => {
     setOpenDialog(false);
     setEditingTruck(null);
   };
 
-  // Handle saving the edited truck
   const handleDialogSave = async () => {
-    // Check if the plate number is duplicated (for editing case)
     const isDuplicate = await checkDuplicatePlate(editingTruck.t_plate);
     if (
       isDuplicate &&
@@ -134,7 +127,6 @@ export default function Truck() {
       return;
     }
 
-    // Validate the fields before proceeding
     if (!validate(editingTruck)) {
       alert("Please fill in all required fields.");
       return;
@@ -152,13 +144,11 @@ export default function Truck() {
     }
   };
 
-  // Handle changes to the new truck form inputs
   const handleNewTruckChange = async (e) => {
     const { name, value } = e.target;
     setNewTruck({ ...newTruck, [name]: value });
     setErrors((prev) => ({ ...prev, [name]: undefined }));
 
-    // Check if the plate number is already registered
     if (name === "t_plate") {
       const isDuplicate = await checkDuplicatePlate(value);
       if (isDuplicate) {
@@ -175,17 +165,14 @@ export default function Truck() {
     }
   };
 
-  // Handle creating a new truck
   const handleCreateTruck = async () => {
     if (creating) return;
 
-    // Validate the fields before proceeding
     if (!validate(newTruck)) {
       alert("Please fill in all required fields.");
       return;
     }
 
-    // Check for duplicate number plate
     const isDuplicate = await checkDuplicatePlate(newTruck.t_plate);
     if (isDuplicate) {
       setErrors((prevErrors) => ({
@@ -210,7 +197,17 @@ export default function Truck() {
     }
   };
 
-  // Handle form input changes (both for creating and editing)
+  // Handle search query change
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Filter trucks based on search query (by plate number)
+  const filteredTrucks = trucks.filter((truck) =>
+    truck.t_plate.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Handle input change for both creating and editing
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (editingTruck) {
@@ -222,6 +219,7 @@ export default function Truck() {
 
   return (
     <div style={{ padding: 8 }}>
+      {/* Create New Truck Button */}
       <Button
         variant="contained"
         color="primary"
@@ -231,6 +229,7 @@ export default function Truck() {
         {showForm ? "Hide Form" : "Create New Truck"}
       </Button>
 
+      {/* Truck Form */}
       {showForm && (
         <Paper style={{ padding: 20, marginBottom: 30 }}>
           <Typography variant="h5" gutterBottom>
@@ -295,6 +294,17 @@ export default function Truck() {
         </Paper>
       )}
 
+      {/* Search Bar */}
+      <TextField
+        label="Search by Plate Number"
+        value={searchQuery}
+        onChange={handleSearchChange}
+        fullWidth
+        variant="outlined"
+        style={{ marginBottom: 20 }}
+      />
+
+      {/* Truck List */}
       <Typography variant="h4" gutterBottom>
         Truck List
       </Typography>
@@ -314,7 +324,7 @@ export default function Truck() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {trucks.map((truck, index) => (
+                {filteredTrucks.map((truck, index) => (
                   <TableRow key={truck.t_id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{truck.t_plate}</TableCell>

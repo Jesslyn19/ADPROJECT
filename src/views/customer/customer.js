@@ -38,6 +38,8 @@ export default function Customer() {
     c_contact: "",
   });
 
+  const [searchQuery, setSearchQuery] = useState(""); // State for search query
+
   const requiredFields = [
     "c_name",
     "c_street",
@@ -75,6 +77,10 @@ export default function Customer() {
     }
   };
 
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this customer?")) {
       try {
@@ -97,7 +103,6 @@ export default function Customer() {
   };
 
   const handleDialogSave = async () => {
-    // Validate the fields before proceeding
     if (!validate(editingCustomer)) {
       alert("Please fill in all required fields.");
       return;
@@ -140,7 +145,6 @@ export default function Customer() {
   const handleCreateCustomer = async () => {
     if (creating) return;
 
-    // Validate the fields before proceeding
     if (!validate(newCustomer)) {
       alert("Please fill in all required fields.");
       return;
@@ -169,12 +173,17 @@ export default function Customer() {
     }
   };
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const filteredCustomers = customers.filter((customer) =>
+    customer.c_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div style={{ padding: 8 }}>
+      {/* Create New Customer Button */}
       <Button
         variant="contained"
         color="primary"
@@ -184,6 +193,7 @@ export default function Customer() {
         {showForm ? "Hide Form" : "Create New Customer"}
       </Button>
 
+      {/* Customer Form */}
       {showForm && (
         <Paper style={{ padding: 20, marginBottom: 30 }}>
           <Typography variant="h5" gutterBottom>
@@ -296,6 +306,17 @@ export default function Customer() {
         </Paper>
       )}
 
+      {/* Search Bar */}
+      <TextField
+        label="Search by Customer Name"
+        value={searchQuery}
+        onChange={handleSearchChange}
+        fullWidth
+        variant="outlined"
+        style={{ marginBottom: 20 }}
+      />
+
+      {/* Customer List */}
       <Typography variant="h4" gutterBottom>
         Customer List
       </Typography>
@@ -315,7 +336,7 @@ export default function Customer() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {customers.map((customer, index) => (
+                {filteredCustomers.map((customer, index) => (
                   <TableRow key={customer.c_id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{customer.c_name}</TableCell>
@@ -358,7 +379,6 @@ export default function Customer() {
         <DialogContent>
           {editingCustomer && (
             <>
-              {/* Name Field */}
               <TextField
                 name="c_name"
                 label="Name"
@@ -367,8 +387,6 @@ export default function Customer() {
                 fullWidth
                 margin="dense"
               />
-
-              {/* Contact Field */}
               <TextField
                 name="c_contact"
                 label="Contact Number"
@@ -377,8 +395,6 @@ export default function Customer() {
                 fullWidth
                 margin="dense"
               />
-
-              {/* Address Fields */}
               <TextField
                 name="c_street"
                 label="Street"
