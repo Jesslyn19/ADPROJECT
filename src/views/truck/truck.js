@@ -34,7 +34,39 @@ export default function Truck() {
     driver_id: "",
     t_capacity: "",
   });
+  const [errors, setErrors] = useState({});
 
+  const requiredFields = ["t_plate", "driver_id", "t_capacity"];
+
+  const isEmpty = (value) => {
+    if (value === undefined || value === null) return true;
+    if (typeof value === "string") return value.trim() === "";
+    return false;
+  };
+
+  const validate = (data) => {
+    const newErrors = {};
+    requiredFields.forEach((key) => {
+      if (isEmpty(data[key])) newErrors[key] = "This field is required";
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Check if the truck number plate is already registered (for duplicate check)
+  const checkDuplicatePlate = async (plate) => {
+    try {
+      const res = await axios.get(
+        `http://localhost:5000/api/trucks/check-duplicate/${plate}`
+      );
+      return res.data.exists; // Assuming the response will return an object with an `exists` field
+    } catch (error) {
+      console.error("Error checking for duplicate plate:", error);
+      return false; // If there's an error, we assume it's not a duplicate
+    }
+  };
+
+  // Fetch trucks from the API
   const fetchTrucks = async () => {
     setLoading(true);
     try {
@@ -47,11 +79,10 @@ export default function Truck() {
     }
   };
 
+  // Fetch drivers from the API
   const fetchDrivers = async () => {
-    console.log("fetchDrivers function called");
     try {
       const res = await axios.get("http://localhost:5000/api/drivers?role=2");
-      console.log("Fetched drivers:", res.data);
       setDrivers(res.data);
     } catch (error) {
       console.error("Error fetching drivers:", error);
@@ -59,15 +90,11 @@ export default function Truck() {
   };
 
   useEffect(() => {
-    console.log("useEffect triggered: Trucks");
     fetchTrucks();
-  }, []);
-
-  useEffect(() => {
-    console.log("useEffect triggered: Drivers");
     fetchDrivers();
   }, []);
 
+  // Handle deleting a truck
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this truck?")) {
       try {
@@ -79,17 +106,40 @@ export default function Truck() {
     }
   };
 
+  // Open the edit dialog and set truck data for editing
   const handleEdit = (truck) => {
-    setEditingTruck({ ...truck }); // Clone to allow editing
+    setEditingTruck({ ...truck });
     setOpenDialog(true);
   };
 
+  // Close the dialog
   const handleDialogClose = () => {
     setOpenDialog(false);
     setEditingTruck(null);
   };
 
+  // Handle saving the edited truck
   const handleDialogSave = async () => {
+    // Check if the plate number is duplicated (for editing case)
+    const isDuplicate = await checkDuplicatePlate(editingTruck.t_plate);
+    if (
+      isDuplicate &&
+      editingTruck.t_plate !==
+        trucks.find((truck) => truck.t_id === editingTruck.t_id).t_plate
+    ) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        t_plate: "Truck number plate already registered",
+      }));
+      return;
+    }
+
+    // Validate the fields before proceeding
+    if (!validate(editingTruck)) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
     try {
       await axios.put(
         `http://localhost:5000/api/trucks/${editingTruck.t_id}`,
@@ -102,21 +152,51 @@ export default function Truck() {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditingTruck({ ...editingTruck, [name]: value });
-  };
-
-  const handleNewTruckChange = (e) => {
+  // Handle changes to the new truck form inputs
+  const handleNewTruckChange = async (e) => {
     const { name, value } = e.target;
     setNewTruck({ ...newTruck, [name]: value });
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
+
+    // Check if the plate number is already registered
+    if (name === "t_plate") {
+      const isDuplicate = await checkDuplicatePlate(value);
+      if (isDuplicate) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          t_plate: "Truck number plate already registered",
+        }));
+      } else {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          t_plate: undefined,
+        }));
+      }
+    }
   };
 
+  // Handle creating a new truck
   const handleCreateTruck = async () => {
     if (creating) return;
+
+    // Validate the fields before proceeding
+    if (!validate(newTruck)) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    // Check for duplicate number plate
+    const isDuplicate = await checkDuplicatePlate(newTruck.t_plate);
+    if (isDuplicate) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        t_plate: "Truck number plate already registered",
+      }));
+      return;
+    }
+
     setCreating(true);
     try {
-      console.log("Creating truck with data:", newTruck);
       await axios.post("http://localhost:5000/api/trucks", newTruck);
       await fetchTrucks();
       alert("Truck created successfully!");
@@ -127,6 +207,16 @@ export default function Truck() {
       alert("Failed to create truck.");
     } finally {
       setCreating(false);
+    }
+  };
+
+  // Handle form input changes (both for creating and editing)
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (editingTruck) {
+      setEditingTruck({ ...editingTruck, [name]: value });
+    } else {
+      setNewTruck({ ...newTruck, [name]: value });
     }
   };
 
@@ -154,6 +244,8 @@ export default function Truck() {
                 value={newTruck.t_plate}
                 onChange={handleNewTruckChange}
                 fullWidth
+                error={Boolean(errors.t_plate)}
+                helperText={errors.t_plate || "Please fill out this field"}
               />
             </Grid>
             <Grid item xs={12}>
@@ -164,6 +256,8 @@ export default function Truck() {
                 value={newTruck.driver_id}
                 onChange={handleNewTruckChange}
                 fullWidth
+                error={Boolean(errors.driver_id)}
+                helperText={errors.driver_id || "Please select a driver"}
               >
                 <MenuItem value="">Select Driver</MenuItem>
                 {drivers.map((driver) => (
@@ -181,6 +275,8 @@ export default function Truck() {
                 value={newTruck.t_capacity}
                 onChange={handleNewTruckChange}
                 fullWidth
+                error={Boolean(errors.t_capacity)}
+                helperText={errors.t_capacity || "Please fill out this field"}
                 inputProps={{ min: 0 }}
               />
             </Grid>
@@ -256,6 +352,8 @@ export default function Truck() {
                 onChange={handleChange}
                 fullWidth
                 margin="dense"
+                error={Boolean(errors.t_plate)}
+                helperText={errors.t_plate || "Please fill out this field"}
               />
               <TextField
                 select
@@ -265,6 +363,8 @@ export default function Truck() {
                 onChange={handleChange}
                 fullWidth
                 margin="dense"
+                error={Boolean(errors.driver_id)}
+                helperText={errors.driver_id || "Please select a driver"}
               >
                 <MenuItem value="">Select Driver</MenuItem>
                 {drivers.map((driver) => (
@@ -281,6 +381,8 @@ export default function Truck() {
                 onChange={handleChange}
                 fullWidth
                 margin="dense"
+                error={Boolean(errors.t_capacity)}
+                helperText={errors.t_capacity || "Please fill out this field"}
                 inputProps={{ min: 0 }}
               />
             </>

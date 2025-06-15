@@ -190,6 +190,7 @@ export default function Customer() {
             Create New Customer
           </Typography>
           <Grid container spacing={2}>
+            {/* Name Field */}
             <Grid item xs={12} sm={6}>
               <TextField
                 name="c_name"
@@ -202,6 +203,22 @@ export default function Customer() {
                 fullWidth
               />
             </Grid>
+
+            {/* Contact Field */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="c_contact"
+                label="Contact Number"
+                value={newCustomer.c_contact}
+                onChange={handleNewCustomerChange}
+                error={Boolean(errors.c_contact)}
+                helperText={errors.c_contact && "Please fill out this field"}
+                required
+                fullWidth
+              />
+            </Grid>
+
+            {/* Address Fields */}
             <Grid item xs={12} sm={6}>
               <TextField
                 name="c_street"
@@ -214,7 +231,7 @@ export default function Customer() {
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 name="c_postcode"
                 label="Postcode"
@@ -250,7 +267,7 @@ export default function Customer() {
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 name="c_country"
                 label="Country"
@@ -262,18 +279,7 @@ export default function Customer() {
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12}>
-              <TextField
-                name="c_contact"
-                label="Contact Number"
-                value={newCustomer.c_contact}
-                onChange={handleNewCustomerChange}
-                error={Boolean(errors.c_contact)}
-                helperText={errors.c_contact && "Please fill out this field"}
-                required
-                fullWidth
-              />
-            </Grid>
+
             <Grid item xs={12}>
               <Button
                 variant="contained"
@@ -352,6 +358,7 @@ export default function Customer() {
         <DialogContent>
           {editingCustomer && (
             <>
+              {/* Name Field */}
               <TextField
                 name="c_name"
                 label="Name"
@@ -360,6 +367,18 @@ export default function Customer() {
                 fullWidth
                 margin="dense"
               />
+
+              {/* Contact Field */}
+              <TextField
+                name="c_contact"
+                label="Contact Number"
+                value={editingCustomer.c_contact}
+                onChange={handleChange}
+                fullWidth
+                margin="dense"
+              />
+
+              {/* Address Fields */}
               <TextField
                 name="c_street"
                 label="Street"
@@ -396,14 +415,6 @@ export default function Customer() {
                 name="c_country"
                 label="Country"
                 value={editingCustomer.c_country}
-                onChange={handleChange}
-                fullWidth
-                margin="dense"
-              />
-              <TextField
-                name="c_contact"
-                label="Contact Number"
-                value={editingCustomer.c_contact}
                 onChange={handleChange}
                 fullWidth
                 margin="dense"

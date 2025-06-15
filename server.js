@@ -849,8 +849,23 @@ app.post("/api/trucks", async (req, res) => {
     return res.status(400).json({ error: "t_plate is required" });
   }
 
+  // Check for duplicate number plate before creating
   try {
     const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      `SELECT 1 FROM tb_truck WHERE t_plate = ? AND t_status = 1`,
+      [t_plate]
+    );
+
+    if (rows.length > 0) {
+      // If a truck with the same plate exists
+      await connection.end();
+      return res
+        .status(400)
+        .json({ error: "Truck number plate already registered" });
+    }
+
+    // No duplicate found, proceed with creation
     const [result] = await connection.execute(
       `INSERT INTO tb_truck (t_plate, t_capacity, driver_id) VALUES (?, ?, ?)`,
       [t_plate, t_capacity || null, driver_id || null]
@@ -872,7 +887,6 @@ app.post("/api/trucks", async (req, res) => {
 // ===============================
 app.put("/api/trucks/:id", async (req, res) => {
   const { t_plate, t_capacity, driver_id } = req.body;
-  console.log("Request body:", req.body);
 
   if (!t_plate) {
     return res.status(400).json({ error: "t_plate is required" });
@@ -880,6 +894,22 @@ app.put("/api/trucks/:id", async (req, res) => {
 
   try {
     const connection = await mysql.createConnection(dbConfig);
+
+    // Check if the plate already exists (excluding the current truck's id)
+    const [rows] = await connection.execute(
+      `SELECT 1 FROM tb_truck WHERE t_plate = ? AND t_status = 1 AND t_id != ?`,
+      [t_plate, req.params.id]
+    );
+
+    if (rows.length > 0) {
+      // If a truck with the same plate exists
+      await connection.end();
+      return res
+        .status(400)
+        .json({ error: "Truck number plate already registered" });
+    }
+
+    // No duplicate found, proceed with update
     const [result] = await connection.execute(
       `UPDATE tb_truck 
        SET t_plate = ?, t_capacity = ?, driver_id = ?
@@ -900,7 +930,7 @@ app.put("/api/trucks/:id", async (req, res) => {
 });
 
 // ===============================
-// DELETE a truck
+// DELETE a truck (soft delete by setting t_status to 2)
 // ===============================
 app.delete("/api/trucks/:id", async (req, res) => {
   try {
@@ -922,6 +952,32 @@ app.delete("/api/trucks/:id", async (req, res) => {
   }
 });
 
+// ===============================
+// CHECK if truck number plate is already registered (duplicate check)
+// ===============================
+app.get("/api/trucks/check-duplicate/:plate", async (req, res) => {
+  const { plate } = req.params;
+
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      `SELECT 1 FROM tb_truck WHERE t_plate = ? AND t_status = 1`,
+      [plate]
+    );
+    await connection.end();
+
+    if (rows.length > 0) {
+      // If a truck with the same plate exists
+      res.json({ exists: true });
+    } else {
+      // No truck with the same plate
+      res.json({ exists: false });
+    }
+  } catch (error) {
+    console.error("Error checking for duplicate plate:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 // ===============================
 // GET all drivers (users with role_id=2)
 // ===============================
