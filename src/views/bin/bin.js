@@ -41,6 +41,7 @@ export default function Bin() {
     c_id: "",
     t_id: "",
   });
+  const [searchQuery, setSearchQuery] = useState(""); // State for search query
 
   useEffect(() => {
     axios
@@ -67,6 +68,10 @@ export default function Bin() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchBins();
+  }, []);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this bin?")) {
@@ -139,12 +144,19 @@ export default function Bin() {
     }
   };
 
-  useEffect(() => {
-    fetchBins();
-  }, []);
+  // Handle search query change
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Filter bins based on search query (by bin plate)
+  const filteredBins = bins.filter((bin) =>
+    bin.sb_plate.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div style={{ padding: 8 }}>
+      {/* Create New Bin Button */}
       <Button
         variant="contained"
         color="primary"
@@ -154,6 +166,7 @@ export default function Bin() {
         {showForm ? "Hide Form" : "Create New Bin"}
       </Button>
 
+      {/* Bin Form */}
       {showForm && (
         <Paper style={{ padding: 20, marginBottom: 30 }}>
           <Typography variant="h5" gutterBottom>
@@ -275,6 +288,17 @@ export default function Bin() {
         </Paper>
       )}
 
+      {/* Search Bar */}
+      <TextField
+        label="Search by Bin Plate"
+        value={searchQuery}
+        onChange={handleSearchChange}
+        fullWidth
+        variant="outlined"
+        style={{ marginBottom: 20 }}
+      />
+
+      {/* Bin List */}
       <Typography variant="h4" gutterBottom>
         Bin List
       </Typography>
@@ -297,7 +321,7 @@ export default function Bin() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {bins.map((bin, index) => (
+                {filteredBins.map((bin, index) => (
                   <TableRow key={bin.sb_id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{bin.sb_plate}</TableCell>

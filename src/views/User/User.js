@@ -49,6 +49,7 @@ export default function User() {
     u_contact: "", // Added contact field
     role_id: "",
   });
+  const [searchQuery, setSearchQuery] = useState(""); // State for search query
 
   const requiredFields = [
     "u_fname",
@@ -67,7 +68,6 @@ export default function User() {
   const isEmpty = (v) => {
     if (v === undefined || v === null) return true;
     if (typeof v === "string") return v.trim() === "";
-    // treat 0, NaN, or '' as empty only if you want to forbid them
     return false;
   };
 
@@ -205,7 +205,6 @@ export default function User() {
     if (creating) return;
 
     if (!validate(newUser)) {
-      // quick global hint – individual fields already turn red
       alert("Please fill in all required fields.");
       return;
     }
@@ -250,8 +249,22 @@ export default function User() {
     fetchRoles();
   }, []);
 
+  // Handle search query change
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Filter users based on search query (by first name, last name, or username)
+  const filteredUsers = users.filter(
+    (user) =>
+      user.u_fname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.u_lname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.u_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div style={{ padding: 8 }}>
+      {/* Create New User Button */}
       <Button
         variant="contained"
         color="primary"
@@ -261,6 +274,7 @@ export default function User() {
         {showForm ? "Hide Form" : "Create New User"}
       </Button>
 
+      {/* User Form */}
       {showForm && (
         <Paper style={{ padding: 20, marginBottom: 30 }}>
           <Typography variant="h5" gutterBottom>
@@ -441,6 +455,16 @@ export default function User() {
         </Paper>
       )}
 
+      {/* Search Bar Below Create User Form */}
+      <TextField
+        label="Search by Name"
+        value={searchQuery}
+        onChange={handleSearchChange}
+        fullWidth
+        variant="outlined"
+        style={{ marginBottom: 20 }}
+      />
+
       <Typography variant="h4" gutterBottom>
         User List
       </Typography>
@@ -457,12 +481,12 @@ export default function User() {
                   <TableCell>Username</TableCell>
                   <TableCell>Role</TableCell>
                   <TableCell>Address</TableCell>
-                  <TableCell>Contact</TableCell> {/* Added Contact */}
+                  <TableCell>Contact</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <TableRow key={user.u_id}>
                     <TableCell>{user.u_id}</TableCell>
                     <TableCell>
