@@ -1,6 +1,13 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { LoadScript, GoogleMap, TrafficLayer } from "@react-google-maps/api";
-import PropTypes from "prop-types";
+import { Button } from "@material-ui/core";
+import GridItem from "components/Grid/GridItem.js";
+import GridContainer from "components/Grid/GridContainer.js";
+import Card from "components/Card/Card.js";
+import CardHeader from "components/Card/CardHeader.js";
+import CardIcon from "components/Card/CardIcon.js";
+import Icon from "@material-ui/core/Icon";
+import { makeStyles } from "@material-ui/core/styles";
 import axios from "axios";
 import truckblue from "assets/img/truck-blue.png";
 import truckgreen from "assets/img/truck-green.png";
@@ -13,18 +20,10 @@ import {
   faTrafficLight,
 } from "@fortawesome/free-solid-svg-icons";
 
-const Button = ({ onClick, disabled, className, children }) => (
-  <button onClick={onClick} disabled={disabled} className={className}>
-    {children}
-  </button>
-);
+import styles from "assets/jss/material-dashboard-react/views/dashboardStyle.js";
+import { red } from "@material-ui/core/colors";
+const useStyles = makeStyles(styles);
 
-Button.propTypes = {
-  onClick: PropTypes.func.isRequired,
-  disabled: PropTypes.bool,
-  className: PropTypes.string,
-  children: PropTypes.node.isRequired,
-};
 // Constants
 const MAP_CONTAINER_STYLE = {
   width: "100%",
@@ -32,22 +31,6 @@ const MAP_CONTAINER_STYLE = {
   borderRadius: "8px",
   border: "1px solid #e2e8f0",
   backgroundColor: "black",
-};
-
-const CONTAINER_MAIN_STYLE = {
-  display: "flex",
-  height: "calc(100vh - 64px)",
-  overflow: "auto",
-};
-
-const LEFT_PANEL_STYLE = {
-  width: "380px",
-  flexShrink: 0,
-  backgroundColor: "#f9fafb",
-  padding: "24px",
-  borderRight: "1px solid #e5e7eb",
-  display: "flex",
-  flexDirection: "column",
 };
 
 const MAP_PANEL_STYLE = {
@@ -66,6 +49,7 @@ const TRUCK_ICONS = {
 const googleMapsLibraries = ["geometry", "places", "marker"];
 
 const DriverMaps = () => {
+  const classes = useStyles();
   const currentDriverId = parseInt(localStorage.getItem("userId"));
   const googleMapRef = useRef(null);
   const directionsService = useRef(null);
@@ -805,17 +789,25 @@ const DriverMaps = () => {
   }, []);
 
   const currentLeg = directionsResult?.routes[0]?.legs[currentLegIndex];
-  const nextDestinationAddress = currentLeg?.end_address || "N/A";
 
   // Corrected logic for nextDestinationName
   let nextDestinationName = "N/A";
+  let nextDestinationAddressDisplay = "N/A";
   if (assignedBins.length > 0) {
     if (currentLegIndex < assignedBins.length) {
-      nextDestinationName = `Bin ${assignedBins[currentLegIndex]?.sb_id}`;
+      nextDestinationName = `${assignedBins[currentLegIndex]?.sb_plate}`;
+      if (assignedBins[currentLegIndex]?.sb_floor) {
+        // This checks for truthiness (not null, undefined, 0, false, or empty string)
+        nextDestinationAddressDisplay = `${assignedBins[currentLegIndex]?.sb_floor}, ${assignedBins[currentLegIndex]?.sb_street}`;
+      } else {
+        nextDestinationAddressDisplay = `${assignedBins[currentLegIndex]?.sb_street}`;
+      }
     } else if (currentLegIndex === assignedBins.length) {
       nextDestinationName = "Final Destination (Depot)";
+      nextDestinationAddressDisplay = `Lat: ${DEPOT_LOCATION.lat}, Lng: ${DEPOT_LOCATION.lng}`;
     } else {
       nextDestinationName = "Route Completed";
+      nextDestinationAddressDisplay = "";
     }
   }
   const isPreviousDisabled =
@@ -833,18 +825,18 @@ const DriverMaps = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-lg text-gray-700">Loading driver and map data...</p>
+      <div>
+        <p>Loading driver and map data...</p>
       </div>
     );
   }
 
   if (error && !routeFinished) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen text-red-600">
-        <p className="text-lg font-semibold">Error:</p>
+      <div>
+        <p style={{ color: "red" }}>Error:</p>
         <p>{error}</p>
-        <p className="text-sm mt-2 text-gray-500">
+        <p style={{ fontSize: "12px", marginTop: "8px", color: "gray" }}>
           Please ensure the driver is assigned a truck and the truck has bins
           assigned for a route.
         </p>
@@ -861,267 +853,361 @@ const DriverMaps = () => {
       libraries={googleMapsLibraries}
       loading="async"
     >
-      <div style={CONTAINER_MAIN_STYLE} className="flex h-screen bg-white">
-        {/* START OF LEFT PANEL */}
-        <div style={LEFT_PANEL_STYLE}>
-          {/* This div will now take all available vertical space and be scrollable */}
-          <div className="flex-1 overflow-y-auto pr-2 custom-scroll">
-            {/* Header Section for Left Panel */}
-            <div className="pt-0 pb-2 px-0">
-              <h4 className="text-2xl font-bold text-gray-800 text-center">
-                Driver Route Map:{" "}
-                <span className="text-blue-600">
-                  {driverTruck ? driverTruck.t_plate : "N/A"}
-                </span>
-                {driverTruck?.driver_name && (
-                  <span className="text-gray-600 text-lg">
-                    {" "}
-                    ({driverTruck.driver_name})
-                  </span>
-                )}
-              </h4>
-            </div>
-
-            {/* Current Navigation Status / Start Navigation Section */}
-            <div className="flex flex-col bg-gray-50 p-4 rounded-xl shadow-md ring-1 ring-gray-200 mt-4">
-              <h4 className="text-xl font-bold mb-3 text-gray-800 border-b pb-1">
-                Current Navigation Status
-              </h4>
-
-              {routeFinished ? (
-                <div className="text-center py-6">
-                  <p className="text-green-600 text-2xl font-bold mb-2">
-                    Route Completed!
-                  </p>
-                  <p className="text-gray-600 text-md">
-                    {infoMessage || "You have reached the final destination."}
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setIsNavigationStarted(false);
-                      setRouteFinished(false);
-                      setDirectionsResult(null);
-                      setCurrentLegIndex(0);
-                      setError(null);
-                      setInfoMessage(null);
-                      // Trigger re-display of two bins if applicable after reset
-                      if (assignedBins.length >= 2 && googleMapRef.current) {
-                        calculateAndDisplayRoute(false, false, true);
-                        setInfoMessage(
-                          "Showing the first two assigned bins. Click 'Start Navigation' for full route."
-                        );
-                      } else if (assignedBins.length > 0) {
-                        setInfoMessage(
-                          "Click 'Start Navigation' to begin your route."
-                        );
-                      } else {
-                        setInfoMessage("No bins assigned for this truck.");
-                      }
-                    }}
-                    className="mt-6 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-200 text-lg"
-                  >
-                    Start New Route
-                  </Button>
-                </div>
-              ) : isNavigationStarted && directionsResult && currentLeg ? (
-                <>
-                  {error && (
-                    <div className="text-red-500 text-sm mb-3">{error}</div>
-                  )}
-                  {infoMessage && (
-                    <div className="text-blue-500 text-sm mb-3">
-                      {infoMessage}
-                    </div>
-                  )}
-                  <div className="mb-4 text-center">
-                    <p className="text-2xl font-bold text-indigo-700 mb-1">
-                      {nextDestinationName}
-                    </p>
-                    <p className="text-md text-gray-600 mb-2">
-                      {nextDestinationAddress}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Distance:{" "}
-                      <span className="font-semibold">
-                        {currentLeg.distance?.text || "N/A"}
-                      </span>{" "}
-                      | Time:{" "}
-                      <span className="font-semibold">
-                        {currentLeg.duration?.text || "N/A"}
-                      </span>
-                    </p>
-                  </div>
-
-                  {/* THIS IS THE MODIFIED SECTION FOR TRIP INSTRUCTIONS */}
-                  <div className="flex-grow trip-instructions flex flex-col">
-                    {" "}
-                    <h3 className="text-lg font-semibold mb-3 text-gray-800">
-                      Trip Instructions
-                    </h3>
-                    <div className="flex-grow overflow-y-auto">
-                      {" "}
-                      <ol className="list-decimal list-inside text-gray-700 space-y-2 text-sm">
-                        {currentLeg.steps?.length > 0 ? (
-                          currentLeg.steps.map((step, stepIndex) => (
-                            <li
-                              key={stepIndex}
-                              dangerouslySetInnerHTML={{
-                                __html: step.instructions
-                                  .replace(/<b>/g, "<strong>")
-                                  .replace(/<\/b>/g, "</strong>"),
-                              }}
-                            />
-                          ))
-                        ) : (
-                          <li>
-                            No detailed instructions available for this step.
-                          </li>
-                        )}
-                      </ol>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-6">
-                  {error && (
-                    <div className="text-red-500 text-sm mb-3">{error}</div>
-                  )}
-                  {infoMessage && (
-                    <div className="text-blue-500 text-sm mb-3">
-                      {infoMessage}
-                    </div>
-                  )}
-                  <p className="text-gray-600 mb-6 text-md">
-                    Click &quot;Start Navigation&quot; to begin your route.
-                  </p>
-                  <Button
-                    onClick={handleStartNavigation}
-                    disabled={
-                      loading ||
-                      !isGoogleApiLoaded ||
-                      !isMapInstanceReady ||
-                      !driverTruck ||
-                      assignedBins.length === 0 ||
-                      isNavigationStarted ||
-                      !!error
-                    }
-                    className="px-8 py-3 bg-green-600 text-white font-semibold text-lg rounded-full shadow-lg hover:bg-green-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Start Navigation
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-          {/* END OF SCROLLABLE CONTENT SECTION */}
-
-          {/* NAVIGATION BUTTONS (AT BOTTOM OF LEFT PANEL) */}
-          {isNavigationStarted && !routeFinished && (
-            <div className="mt-6 flex justify-center space-x-6">
-              <Button
-                onClick={handlePreviousLeg}
-                disabled={isPreviousDisabled}
-                className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center shadow-md hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FontAwesomeIcon
-                  icon={faArrowLeft}
-                  className="text-3xl text-gray-700"
-                />
-              </Button>
-
-              {isAtLastLeg ? (
-                <Button
-                  onClick={handleFinishRoute}
-                  disabled={!directionsResult}
-                  className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-md hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <FontAwesomeIcon
-                    icon={faCheck}
-                    className="text-3xl text-white"
-                  />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleNextLeg}
-                  disabled={isNextDisabled}
-                  className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center shadow-md hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <FontAwesomeIcon
-                    icon={faArrowRight}
-                    className="text-3xl text-white"
-                  />
-                </Button>
-              )}
-
-              {/* Reroute Button */}
-              <Button
-                onClick={() => calculateAndDisplayRoute(true, true)}
-                disabled={
-                  !isNavigationStarted || !directionsResult || routeFinished
-                }
-                className="w-16 h-16 rounded-full bg-yellow-500 flex items-center justify-center shadow-md hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Reroute from current location"
-              >
-                <FontAwesomeIcon
-                  icon={faRedo}
-                  className="text-3xl text-white"
-                />
-              </Button>
-            </div>
-          )}
-          {/* Traffic Layer Toggle */}
-          {isMapInstanceReady && (
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={() => setShowTraffic(!showTraffic)}
-                className={`flex items-center px-4 py-2 rounded-full text-sm font-semibold transition duration-200 ${
-                  showTraffic
-                    ? "bg-purple-600 text-white hover:bg-purple-700"
-                    : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
-              >
-                <FontAwesomeIcon icon={faTrafficLight} className="mr-2" />
-                {showTraffic ? "Hide Traffic" : "Show Traffic"}
-              </button>
-            </div>
-          )}
-        </div>
-        {/* END OF LEFT PANEL */}
-
-        {/* MAP PANEL */}
-        <div style={MAP_PANEL_STYLE}>
-          {isGoogleApiLoaded && (
-            <GoogleMap
-              mapContainerStyle={MAP_CONTAINER_STYLE}
-              center={
-                driverTruck?.t_latitude && driverTruck?.t_longitude
-                  ? {
-                      lat: driverTruck.t_latitude,
-                      lng: driverTruck.t_longitude,
-                    }
-                  : DEPOT_LOCATION
-              }
-              zoom={DEFAULT_ZOOM}
-              onLoad={onMapLoad}
-              onUnmount={onMapUnmount}
-              options={{
-                zoomControl: true,
-                mapTypeControl: true,
-                scaleControl: true,
-                streetViewControl: true,
-                rotateControl: true,
-                fullscreenControl: true,
-              }}
+      <div>
+        {/* Header Section */}
+        <div className="header">
+          <h3
+            style={{
+              fontWeight: "bold",
+              color: "black",
+              fontSize: "20px",
+              marginLeft: "4px",
+              marginTop: "2px",
+            }}
+          >
+            Driver Route Map:
+            <span
+              style={{ fontWeight: "bold", color: "black", marginLeft: "8px" }}
             >
-              {isMapInstanceReady && showTraffic && (
-                <TrafficLayer autoRefresh={true} />
-              )}
-            </GoogleMap>
-          )}
+              {driverTruck ? driverTruck.t_plate : "N/A"}
+            </span>
+            {driverTruck?.driver_name && (
+              <span style={{ fontStyle: "italic", color: "gray" }}>
+                {" "}
+                ({driverTruck.driver_name})
+              </span>
+            )}
+          </h3>
         </div>
+
+        <GridContainer spacing={3}>
+          <GridItem xs={12} sm={4} md={3}>
+            <Card>
+              <CardHeader color="light">
+                <CardIcon color="success">
+                  <Icon>route</Icon>
+                </CardIcon>
+                <p
+                  className={classes.cardCategory}
+                  style={{
+                    fontSize: "16px",
+                    color: "black",
+                    marginBottom: "4px",
+                    marginTop: "0px",
+                  }}
+                >
+                  Route Distance
+                </p>
+                <h4 className={classes.cardTitle}>
+                  {directionsResult
+                    ? directionsResult.routes[0].legs[0].distance.text
+                    : "Click 'Start Navigation' to view"}
+                </h4>
+              </CardHeader>
+            </Card>
+          </GridItem>
+
+          <GridItem xs={12} sm={6} md={3}>
+            <Card>
+              <CardHeader color="light">
+                <CardIcon color="warning">
+                  <Icon>access_time</Icon>
+                </CardIcon>
+                <p
+                  className={classes.cardCategory}
+                  style={{
+                    fontSize: "16px",
+                    color: "black",
+                    marginBottom: "4px",
+                    marginTop: "0px",
+                  }}
+                >
+                  Estimated Time
+                </p>
+                <h4 className={classes.cardTitle}>
+                  {directionsResult
+                    ? directionsResult.routes[0].legs[0].duration.text
+                    : "Click 'Start Navigation' to view"}
+                </h4>
+              </CardHeader>
+            </Card>
+          </GridItem>
+
+          <GridItem xs={12} sm={6} md={4}>
+            <Card>
+              <CardHeader color="light">
+                <CardIcon color="info">
+                  <Icon>location_on</Icon>
+                </CardIcon>
+                <p
+                  className={classes.cardCategory}
+                  style={{
+                    fontSize: "16px",
+                    color: "black",
+                    marginBottom: "4px",
+                    marginTop: "0px",
+                  }}
+                >
+                  Next Destination
+                </p>
+                <h5 className={classes.cardTitle}>
+                  ({nextDestinationName}) - {nextDestinationAddressDisplay}
+                </h5>
+              </CardHeader>
+            </Card>
+          </GridItem>
+
+          <GridItem xs={12} sm={6} md={2}>
+            <Card>
+              <CardHeader color="light">
+                <CardIcon color="info">
+                  <Icon>delete</Icon>
+                </CardIcon>
+                <p
+                  className={classes.cardCategory}
+                  style={{
+                    fontSize: "16px",
+                    color: "black",
+                    marginBottom: "4px",
+                    marginTop: "0px",
+                  }}
+                >
+                  Bins to Collect
+                </p>
+                <h4 className={classes.cardTitle}>{assignedBins.length}</h4>
+              </CardHeader>
+            </Card>
+          </GridItem>
+        </GridContainer>
+
+        {/* Navigation Controls and Trip Instructions */}
+        <GridContainer spacing={2}>
+          <GridItem xs={6} sm={4} md={4}>
+            <Card Card style={{ height: "650px" }}>
+              <CardHeader color="primary">
+                <h4
+                  className={classes.cardTitleWhite}
+                  style={{
+                    marginTop: "4px",
+                    marginLeft: "18px",
+                    marginRight: "18px",
+                    fontWeight: "bold",
+                    fontSize: "20px",
+                  }}
+                >
+                  Navigation & Instructions
+                </h4>
+              </CardHeader>
+              <div
+                style={{
+                  marginTop: "4px",
+                  marginLeft: "18px",
+                  marginRight: "18px",
+                }}
+              >
+                {/* Navigation Controls Section */}
+                {routeFinished ? (
+                  <div>
+                    <p>Route Completed!</p>
+                    <p>
+                      {infoMessage || "You have reached the final destination."}
+                    </p>
+                    <Button onClick={handleStartNavigation}>
+                      Start New Route
+                    </Button>
+                  </div>
+                ) : !isNavigationStarted ? (
+                  <div style={{ textAlign: "center", color: red[500] }}>
+                    {error && <div>{error}</div>}
+                    {infoMessage && (
+                      <div
+                        style={{
+                          color: "blue",
+                          fontSize: "12px",
+                          marginBottom: "12px",
+                        }}
+                      >
+                        {infoMessage}
+                      </div>
+                    )}
+                    <p>
+                      Click &quot;Start Navigation&quot; to begin your route.
+                    </p>
+                    <Button
+                      onClick={handleStartNavigation}
+                      disabled={
+                        loading ||
+                        !isGoogleApiLoaded ||
+                        !isMapInstanceReady ||
+                        !driverTruck ||
+                        assignedBins.length === 0 ||
+                        !!error // Disable if there's an error
+                      }
+                    >
+                      Start Navigation
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Button
+                      onClick={handlePreviousLeg}
+                      disabled={isPreviousDisabled}
+                    >
+                      <FontAwesomeIcon
+                        icon={faArrowLeft}
+                        style={{ marginRight: "2px", marginTop: "8px" }}
+                      />
+                    </Button>
+
+                    {isAtLastLeg ? (
+                      <Button
+                        onClick={handleFinishRoute}
+                        disabled={!directionsResult}
+                      >
+                        <FontAwesomeIcon
+                          icon={faCheck}
+                          style={{ marginRight: "2px", marginTop: "8px" }}
+                        />
+                      </Button>
+                    ) : (
+                      <Button onClick={handleNextLeg} disabled={isNextDisabled}>
+                        <FontAwesomeIcon
+                          icon={faArrowRight}
+                          style={{ marginRight: "2px", marginTop: "8px" }}
+                        />
+                      </Button>
+                    )}
+
+                    {/* Reroute Button */}
+                    <Button
+                      onClick={() => calculateAndDisplayRoute(true, true)}
+                      disabled={
+                        !isNavigationStarted ||
+                        !directionsResult ||
+                        routeFinished
+                      }
+                      title="Reroute from current location"
+                    >
+                      <FontAwesomeIcon
+                        icon={faRedo}
+                        style={{ marginRight: "2px", marginTop: "8px" }}
+                      />
+                    </Button>
+                  </div>
+                )}
+                {/* Traffic Layer Toggle - can also be here or in map panel */}
+                {isMapInstanceReady && (
+                  <div>
+                    <Button
+                      onClick={() => setShowTraffic(!showTraffic)}
+                      style={{ marginRight: "8px", marginTop: "8px" }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faTrafficLight}
+                        style={{ marginRight: "8px" }}
+                      />
+                      {showTraffic ? "Hide Traffic" : "Show Traffic"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Trip Instructions Section*/}
+              {isNavigationStarted &&
+                directionsResult &&
+                currentLeg &&
+                !routeFinished && (
+                  <div style={{ marginTop: "2px" }}>
+                    <CardHeader
+                      color="light"
+                      onClick={() => setDirectionsResult(!directionsResult)} // Corrected state management
+                    >
+                      <div>
+                        <span
+                          style={{
+                            fontSize: "20px",
+                            color: "gray",
+                            fontWeight: "bold",
+                            marginLeft: "10px", // Optional: add margin to separate the pipe from the text
+                          }}
+                        >
+                          Trip Instructions
+                          {"   |   "}
+                          {nextDestinationName
+                            ? `Next: ${nextDestinationName}`
+                            : ""}
+                        </span>
+                      </div>
+                    </CardHeader>
+
+                    {directionsResult && ( // Conditionally render instructions based on directionsResult
+                      <div>
+                        <div>
+                          {currentLeg.steps?.length > 0 ? (
+                            <ol>
+                              {currentLeg.steps.map((step, stepIndex) => (
+                                <li
+                                  key={stepIndex}
+                                  dangerouslySetInnerHTML={{
+                                    __html: step.instructions
+                                      .replace(/<b>/g, "<strong>")
+                                      .replace(/<\/b>/g, "</strong>"),
+                                  }}
+                                />
+                              ))}
+                            </ol>
+                          ) : (
+                            <p>
+                              No detailed instructions available for this step.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+            </Card>
+          </GridItem>
+
+          {/* Map Panel */}
+          <GridItem xs={6} sm={3} md={8}>
+            <div style={MAP_PANEL_STYLE}>
+              {/* Retaining MAP_PANEL_STYLE for the map div itself */}
+              {isGoogleApiLoaded && (
+                <GoogleMap
+                  mapContainerStyle={MAP_CONTAINER_STYLE}
+                  center={
+                    driverTruck?.t_latitude && driverTruck?.t_longitude
+                      ? {
+                          lat: driverTruck.t_latitude,
+                          lng: driverTruck.t_longitude,
+                        }
+                      : DEPOT_LOCATION
+                  }
+                  zoom={DEFAULT_ZOOM}
+                  onLoad={onMapLoad}
+                  onUnmount={onMapUnmount}
+                  options={{
+                    zoomControl: true,
+                    mapTypeControl: true,
+                    scaleControl: true,
+                    streetViewControl: true,
+                    rotateControl: true,
+                    fullscreenControl: true,
+                  }}
+                >
+                  {isMapInstanceReady && showTraffic && (
+                    <TrafficLayer autoRefresh={true} />
+                  )}
+                </GoogleMap>
+              )}
+            </div>
+          </GridItem>
+        </GridContainer>
       </div>
     </LoadScript>
   );
 };
-
 export default DriverMaps;
