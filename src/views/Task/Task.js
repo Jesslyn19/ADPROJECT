@@ -61,7 +61,11 @@ export default function TaskListTable() {
   return (
     <div style={{ padding: 16 }}>
       <Typography variant="h5" gutterBottom>
-        📋 Task List (Date: {selectedDate})
+        📋 Task List ({selectedDate} -{" "}
+        {new Date(selectedDate).toLocaleDateString("en-US", {
+          weekday: "long",
+        })}
+        )
       </Typography>
 
       <Box
@@ -161,7 +165,16 @@ export default function TaskListTable() {
                         "-"
                       )}
                     </TableCell>
-                    <TableCell>{task.status}</TableCell>
+                    <TableCell>
+                      <span
+                        style={{
+                          color: task.status === "Done" ? "green" : "red",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {task.status}
+                      </span>
+                    </TableCell>
                   </TableRow>
                 ))}
             </TableBody>

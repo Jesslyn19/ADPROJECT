@@ -51,7 +51,7 @@ app.post("/api/login", async (req, res) => {
       SELECT COUNT(*) AS missedCount
       FROM tb_smartbin s
       LEFT JOIN tb_image i ON s.sb_plate = i.i_plate AND DATE(i.i_date) = ?
-      WHERE s.sb_status = 1 AND i.i_url IS NULL
+      WHERE s.sb_status = 1 AND i.i_url IS NULL AND FIND_IN_SET(DAYNAME(CURDATE()), s.sb_day)
       `,
       [today]
     );
@@ -147,10 +147,10 @@ app.get("/api/tasks", async (req, res) => {
       LEFT JOIN tb_truck t ON s.t_id = t.t_id
       LEFT JOIN tb_image i 
         ON s.sb_plate = i.i_plate AND DATE(i.i_date) = ?
-      WHERE sb_status = 1
+      WHERE sb_status = 1 AND FIND_IN_SET(DAYNAME(?), REPLACE(s.sb_day, ' ', ''))
       ORDER BY s.sb_id ASC
       `,
-      [selectedDate]
+      [selectedDate,selectedDate]
     );
 
     await connection.end();
