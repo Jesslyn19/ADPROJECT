@@ -3,7 +3,6 @@ import {
   GoogleMap,
   LoadScript,
   Marker, // Still importing for now, but will transition to AdvancedMarkerElement
-  Polyline,
 } from "@react-google-maps/api";
 import axios from "axios";
 import truckblue from "assets/img/truck-blue.png";
@@ -54,7 +53,7 @@ const Maps = () => {
 
       const [truckRes, binRes, userRes] = await Promise.all([
         axios.get("http://localhost:5000/api/trucks"),
-        axios.get("http://localhost:5000/api/smartbins"),
+        axios.get("http://localhost:5000/api/allsmartbins"),
         axios.get("http://localhost:5000/api/drivers"),
       ]);
 
@@ -123,7 +122,7 @@ const Maps = () => {
       directionsService.current.route(
         {
           origin: DEPOT_LOCATION,
-          destination: truck.bins[truck.bins.length - 1],
+          destination: DEPOT_LOCATION,
           waypoints,
           travelMode: window.google.maps.TravelMode.DRIVING,
           optimizeWaypoints: false,
@@ -187,7 +186,7 @@ const Maps = () => {
           }
           return { ...prev, [truckId]: path[step++] };
         });
-      }, 1000);
+      }, 50);
     });
   }, [isPlaying, routes, selectedTruckId, trucks, isApiLoaded]);
 
@@ -273,7 +272,7 @@ const Maps = () => {
               />
             )}
 
-            {/* Route Polyline */}
+            {/* Route Polyline
             {routes[truck.t_id]?.length > 0 && (
               <Polyline
                 path={routes[truck.t_id]}
@@ -283,7 +282,7 @@ const Maps = () => {
                   strokeOpacity: 0.7,
                 }}
               />
-            )}
+            )} */}
           </React.Fragment>
         ))}
 

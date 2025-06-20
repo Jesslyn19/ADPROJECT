@@ -15,6 +15,7 @@ import {
   DialogContent,
   CircularProgress,
   Typography,
+  TextField,
 } from "@material-ui/core";
 
 export default function Bin() {
@@ -22,6 +23,7 @@ export default function Bin() {
   const [viewingReport, setViewingReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchReports = async () => {
     setLoading(true);
@@ -60,8 +62,24 @@ export default function Bin() {
     fetchReports();
   }, []);
 
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const filteredReports = reports.filter((report) =>
+    report.r_subject.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div style={{ padding: 20 }}>
+      <TextField
+        label="Search by Subject"
+        value={searchQuery}
+        onChange={handleSearchChange}
+        fullWidth
+        variant="outlined"
+        style={{ marginBottom: 20 }}
+      />
       <Typography variant="h4" gutterBottom>
         Report List
       </Typography>
@@ -69,7 +87,7 @@ export default function Bin() {
         <CircularProgress />
       ) : (
         <TableContainer component={Paper}>
-          <Box sx={{ maxHeight: "70vh", overflow: "auto" }}>
+          <Box sx={{ maxHeight: "61vh", overflow: "auto" }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
@@ -81,7 +99,7 @@ export default function Bin() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {reports.map((report, index) => (
+                {filteredReports.map((report, index) => (
                   <TableRow key={report.r_id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>

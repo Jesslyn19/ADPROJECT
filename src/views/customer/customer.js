@@ -324,7 +324,7 @@ export default function Customer() {
         <CircularProgress />
       ) : (
         <TableContainer component={Paper}>
-          <Box sx={{ maxHeight: "60vh", overflow: "auto" }}>
+          <Box sx={{ maxHeight: "57vh", overflow: "auto" }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>

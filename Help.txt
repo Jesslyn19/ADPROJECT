@@ -21,3 +21,6 @@ To solve mysql problem
 
 To solve multer problem
 1. npm install express mysql multer cors body-parser
+
+To solve density-clustering
+1. npm install density-clustering

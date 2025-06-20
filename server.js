@@ -499,11 +499,11 @@ app.delete("/api/users/:id", async (req, res) => {
 
 //-----------------------------------------------------------------------
 // Bins section
-app.get("/api/smartbins", async (req, res) => {
+app.get("/api/allsmartbins", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute(
-      `SELECT sb_id, sb_plate, sb_floor, sb_street, sb_postcode, sb_city, sb_state, sb_country, sb_latitude, sb_longitude, c_id, t_id 
+      `SELECT sb_id, sb_plate, sb_floor, sb_street, sb_postcode, sb_city, sb_state, sb_country, sb_latitude, sb_longitude, c_id, t_id, sb_day 
        FROM tb_smartbin 
        WHERE sb_status = 1`
     );
@@ -526,7 +526,7 @@ app.post("/api/smartbins", async (req, res) => {
     sb_state,
     sb_country,
     c_id,
-    t_id,
+    sb_day,
   } = req.body;
 
   if (
@@ -538,7 +538,7 @@ app.post("/api/smartbins", async (req, res) => {
     !sb_state ||
     !sb_country ||
     !c_id ||
-    !t_id
+    !sb_day
   ) {
     return res.status(400).json({ error: "All fields are required" });
   }
@@ -573,21 +573,38 @@ app.post("/api/smartbins", async (req, res) => {
     const sb_longitude = parseFloat(lng);
 
     const connection = await mysql.createConnection(dbConfig);
+
+    const sb_plate_clean = Array.isArray(sb_plate) ? sb_plate[0] : sb_plate;
+    const sb_floor_clean = Array.isArray(sb_floor) ? sb_floor[0] : sb_floor;
+    const sb_postcode_clean = Array.isArray(sb_postcode)
+      ? sb_postcode[0]
+      : sb_postcode;
+    const sb_city_clean = Array.isArray(sb_city) ? sb_city[0] : sb_city;
+    const sb_state_clean = Array.isArray(sb_state) ? sb_state[0] : sb_state;
+    const sb_country_clean = Array.isArray(sb_country)
+      ? sb_country[0]
+      : sb_country;
+    const c_id_clean = Array.isArray(c_id) ? parseInt(c_id[0]) : parseInt(c_id);
+    const sb_street_clean = Array.isArray(sb_street)
+      ? sb_street.join(", ")
+      : sb_street;
+    const sb_day_string = Array.isArray(sb_day) ? sb_day.join(",") : sb_day;
+
     const [result] = await connection.execute(
-      `INSERT INTO tb_smartbin (sb_plate, sb_floor, sb_street, sb_postcode, sb_city, sb_state, sb_country, sb_latitude, sb_longitude, c_id, t_id) 
+      `INSERT INTO tb_smartbin (sb_plate, sb_floor, sb_street, sb_postcode, sb_city, sb_state, sb_country, sb_latitude, sb_longitude, c_id, sb_day) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        sb_plate,
-        sb_floor,
-        sb_street,
-        sb_postcode,
-        sb_city,
-        sb_state,
-        sb_country,
+        sb_plate_clean,
+        sb_floor_clean,
+        sb_street_clean,
+        sb_postcode_clean,
+        sb_city_clean,
+        sb_state_clean,
+        sb_country_clean,
         sb_latitude,
         sb_longitude,
-        c_id,
-        t_id,
+        c_id_clean,
+        sb_day_string,
       ]
     );
     await connection.end();
@@ -616,6 +633,7 @@ app.put("/api/smartbins/:id", async (req, res) => {
     sb_country,
     c_id,
     t_id,
+    sb_day,
   } = req.body;
 
   const fullAddress = `${sb_floor}, ${sb_street}, ${sb_postcode}, ${sb_city}, ${sb_state}, ${sb_country}`;
@@ -649,7 +667,7 @@ app.put("/api/smartbins/:id", async (req, res) => {
     const connection = await mysql.createConnection(dbConfig);
     await connection.execute(
       `UPDATE tb_smartbin 
-             SET sb_plate=?, sb_floor=?, sb_street=?, sb_postcode=?, sb_city=?, sb_state=?, sb_country=?, sb_latitude=?, sb_longitude=?, c_id=?, t_id=? 
+             SET sb_plate=?, sb_floor=?, sb_street=?, sb_postcode=?, sb_city=?, sb_state=?, sb_country=?, sb_latitude=?, sb_longitude=?, c_id=?, t_id=?, sb_day=? 
              WHERE sb_id=?`,
       [
         sb_plate,
@@ -663,6 +681,7 @@ app.put("/api/smartbins/:id", async (req, res) => {
         sb_longitude,
         c_id,
         t_id,
+        sb_day,
         req.params.id,
       ]
     );
@@ -715,6 +734,37 @@ app.get("/api/total-customers", async (req, res) => {
     res.json({ total: rows[0].total });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+//-----------------------------------------------------------------------
+// Maps section
+app.put("/api/assign-truck", async (req, res) => {
+  const updates = req.body;
+
+  if (!Array.isArray(updates)) {
+    return res.status(400).json({ error: "Invalid request format." });
+  }
+
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    await connection.beginTransaction();
+
+    for (const { sb_id, t_id } of updates) {
+      if (!sb_id || !t_id) continue;
+      await connection.execute(
+        "UPDATE tb_smartbin SET t_id = ? WHERE sb_id = ?",
+        [t_id, sb_id]
+      );
+    }
+
+    await connection.commit();
+    await connection.end();
+
+    res.status(200).json({ message: "Truck assignments updated successfully" });
+  } catch (error) {
+    console.error("Error updating smartbins:", error);
+    res.status(500).json({ error: "Failed to update bins" });
   }
 });
 

@@ -472,7 +472,7 @@ export default function User() {
         <CircularProgress />
       ) : (
         <TableContainer component={Paper}>
-          <Box sx={{ maxHeight: "60vh", overflow: "auto" }}>
+          <Box sx={{ maxHeight: "57vh", overflow: "auto" }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
@@ -486,9 +486,9 @@ export default function User() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredUsers.map((user) => (
+                {filteredUsers.map((user, index) => (
                   <TableRow key={user.u_id}>
-                    <TableCell>{user.u_id}</TableCell>
+                    <TableCell>{index + 1}</TableCell>
                     <TableCell>
                       {(user.u_fname || "") + " " + (user.u_lname || "")}
                     </TableCell>
