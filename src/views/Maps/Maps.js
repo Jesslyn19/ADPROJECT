@@ -28,8 +28,8 @@ const DEPOT_LOCATION = { lat: 1.4234, lng: 103.6312 };
 const DEFAULT_ZOOM = 13;
 
 const BIN_ICONS = {
-  collected: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
-  missed: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+  Exist: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+  Deleted: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
 };
 
 const clusterBins = (bins) => {
@@ -459,9 +459,7 @@ const Maps = () => {
             title={`Bin: ${bin.sb_plate}\nStatus: ${bin.sb_status}`}
             icon={{
               url:
-                bin.sb_status === "Collected"
-                  ? BIN_ICONS.collected
-                  : BIN_ICONS.missed,
+                bin.sb_status === "Exist" ? BIN_ICONS.Exist : BIN_ICONS.Deleted,
               scaledSize: new window.google.maps.Size(32, 32),
             }}
           />

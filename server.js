@@ -742,6 +742,52 @@ app.get("/api/total-bins-today", async (req, res) => {
   }
 });
 
+// GET trucks with bins assigned for a specific day (for route planning)
+app.get("/api/trucks/route", async (req, res) => {
+  const { date } = req.query;
+  if (!date) {
+    return res.status(400).json({ error: "Missing date parameter" });
+  }
+
+  const connection = await mysql.createConnection(dbConfig);
+
+  try {
+    // Get all trucks with their driver info (NO latitude/longitude)
+    const [trucks] = await connection.execute(`
+      SELECT t_id as truck_id, t_plate,
+             u_id as driver_id, u_name as driver_name
+      FROM tb_truck t
+      LEFT JOIN tb_user u ON t.driver_id = u_id
+    `);
+
+    // Get all bins for the requested day
+    const [bins] = await connection.execute(`
+      SELECT sb_id, sb_plate, sb_latitude, sb_longitude, sb_day, t_id as sb_truck_id
+      FROM tb_smartbin
+    `);
+
+    // Filter bins for the requested day
+    const binsForDay = bins.filter((bin) =>
+      bin.sb_day
+        .split(",")
+        .map((d) => d.trim().toLowerCase())
+        .includes(date.toLowerCase())
+    );
+
+    // Attach bins to their trucks
+    const trucksWithBins = trucks.map((truck) => ({
+      ...truck,
+      bins: binsForDay.filter((bin) => bin.sb_truck_id === truck.truck_id),
+    }));
+
+    res.json(trucksWithBins);
+  } catch (err) {
+    console.error("Error in /api/trucks/route:", err);
+    res.status(500).json({ error: "Server error" });
+  } finally {
+    await connection.end();
+  }
+});
 //-----------------------------------------------------------------------
 // Maps section
 app.put("/api/assign-truck", async (req, res) => {
