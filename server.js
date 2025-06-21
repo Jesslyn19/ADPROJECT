@@ -150,7 +150,7 @@ app.get("/api/tasks", async (req, res) => {
       WHERE sb_status = 1 AND FIND_IN_SET(DAYNAME(?), REPLACE(s.sb_day, ' ', ''))
       ORDER BY s.sb_id ASC
       `,
-      [selectedDate,selectedDate]
+      [selectedDate, selectedDate]
     );
 
     await connection.end();
@@ -722,12 +722,17 @@ app.get("/api/total-bins", async (req, res) => {
   }
 });
 
-//get total customer
-app.get("/api/total-customers", async (req, res) => {
+//get total bins today
+app.get("/api/total-bins-today", async (req, res) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
+
+    // Get current day name (e.g., 'Monday', 'Tuesday', etc.)
+    const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
+
     const [rows] = await connection.execute(
-      "SELECT COUNT(*) AS total FROM tb_customer"
+      "SELECT COUNT(*) AS total FROM tb_smartbin WHERE sb_day LIKE ?",
+      [`%${today}%`]
     );
     await connection.end();
 
