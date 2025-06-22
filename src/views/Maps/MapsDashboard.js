@@ -77,6 +77,7 @@ const Maps = () => {
 
       // Get today's day name to filter bins
       const today = new Date().toLocaleString("en-US", { weekday: "long" });
+      // const today = "Monday"; // Faking Monday for testing
 
       // Process and filter bins for the current day
       const processedBins = binRes.data
@@ -227,7 +228,10 @@ const Maps = () => {
   // Calculate center point
   const center = DEPOT_LOCATION;
 
-  const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
+  // Manually override isWeekend for testing purposes
+  const isWeekend = false;
+  // const isWeekend =
+  //   new Date().getDay() === 0 || new Date().getDay() === 6;
 
   if (!isLoaded)
     return <div className="loading-message">Loading Google Maps...</div>;
