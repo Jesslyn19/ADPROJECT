@@ -1,17 +1,30 @@
 ﻿import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   GoogleMap,
-  LoadScript,
   Marker, // Still importing for now, but will transition to AdvancedMarkerElement
+  useJsApiLoader,
+  Polyline,
 } from "@react-google-maps/api";
 import axios from "axios";
 import truckblue from "assets/img/truck-blue.png";
 import truckgreen from "assets/img/truck-green.png";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPause, faPlay, faStop } from "@fortawesome/free-solid-svg-icons";
+
+// Material UI components
+import { Button, Icon } from "@material-ui/core";
+import Card from "components/Card/Card.js";
+import CardHeader from "components/Card/CardHeader.js";
+import CardIcon from "components/Card/CardIcon.js";
+import GridContainer from "components/Grid/GridContainer.js";
+import GridItem from "components/Grid/GridItem.js";
+import { makeStyles } from "@material-ui/core/styles";
+import styles from "assets/jss/material-dashboard-react/views/dashboardStyle.js";
 
 // Constants
 const MAP_CONTAINER_STYLE = {
   width: "100%",
-  height: "600px",
+  height: "75vh", // Adjusted for card layout
 };
 
 const TRUCK_ICONS = {
@@ -27,23 +40,28 @@ const BIN_ICONS = {
   inactive: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
 };
 
+const useStyles = makeStyles(styles);
+
 const Maps = () => {
+  const classes = useStyles();
   // State
   const [map, setMap] = useState(null);
   const [trucks, setTrucks] = useState([]);
   const [smartbins, setSmartbins] = useState([]);
-  // eslint-disable-next-line no-unused-vars
-  const [selectedTruckId, setSelectedTruckId] = useState("all");
   const [routes, setRoutes] = useState({});
   const [positions, setPositions] = useState({});
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isApiLoaded, setIsApiLoaded] = useState(false); // New state to track API loading
 
   // Refs
   const intervalRefs = useRef({});
   const directionsService = useRef(null);
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: "AIzaSyDr4f-WIYP4FsWF7RW-ElMHMvrB_nGNRNo",
+    libraries: ["geometry", "places", "marker"],
+  });
 
   // Data fetching
   const fetchData = useCallback(async () => {
@@ -57,12 +75,22 @@ const Maps = () => {
         axios.get("http://localhost:5000/api/drivers"),
       ]);
 
-      // Process bins data
-      const processedBins = binRes.data.map((bin) => ({
-        ...bin,
-        lat: parseFloat(bin.sb_latitude),
-        lng: parseFloat(bin.sb_longitude),
-      }));
+      // Get today's day name to filter bins
+      const today = new Date().toLocaleString("en-US", { weekday: "long" });
+
+      // Process and filter bins for the current day
+      const processedBins = binRes.data
+        .filter((bin) =>
+          bin.sb_day
+            .split(",")
+            .map((d) => d.trim())
+            .includes(today)
+        )
+        .map((bin) => ({
+          ...bin,
+          lat: parseFloat(bin.sb_latitude),
+          lng: parseFloat(bin.sb_longitude),
+        }));
 
       // Process trucks data
       const processedTrucks = truckRes.data.map((truck) => {
@@ -93,28 +121,26 @@ const Maps = () => {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (isLoaded) {
+      directionsService.current = new window.google.maps.DirectionsService();
+      fetchData();
+    }
+  }, [isLoaded, fetchData]);
 
   // Route calculation
   const calculateRoutes = useCallback(() => {
-    if (!map || !directionsService.current || !isApiLoaded) {
+    if (!map || !directionsService.current || !isLoaded) {
       return;
     }
 
-    const trucksToRoute =
-      selectedTruckId === "all"
-        ? trucks
-        : trucks.filter((t) => t.t_id === Number(selectedTruckId));
-
-    trucksToRoute.forEach((truck) => {
+    trucks.forEach((truck) => {
       if (!truck.bins.length) {
         setRoutes((prev) => ({ ...prev, [truck.t_id]: [] }));
         setPositions((prev) => ({ ...prev, [truck.t_id]: DEPOT_LOCATION }));
         return;
       }
 
-      const waypoints = truck.bins.slice(1).map((bin) => ({
+      const waypoints = truck.bins.map((bin) => ({
         location: { lat: bin.lat, lng: bin.lng },
         stopover: true,
       }));
@@ -143,32 +169,21 @@ const Maps = () => {
         }
       );
     });
-  }, [trucks, selectedTruckId, map, isApiLoaded]); // Add isApiLoaded to dependencies
+  }, [trucks, map, isLoaded]);
 
   // Initialize DirectionsService once Google Maps API is loaded
-  const onGoogleApiLoad = useCallback(() => {
-    if (window.google) {
-      directionsService.current = new window.google.maps.DirectionsService();
-      setIsApiLoaded(true);
-      calculateRoutes();
-    }
-  }, [calculateRoutes]);
-
   useEffect(() => {
-    if (isApiLoaded) {
+    if (isLoaded) {
       calculateRoutes();
     }
-  }, [isApiLoaded, calculateRoutes]);
+  }, [isLoaded, calculateRoutes]);
 
   // Animation controls
   const startAnimation = useCallback(() => {
-    if (isPlaying || !isApiLoaded) return; // Ensure API is loaded
+    if (isPlaying || !isLoaded) return; // Ensure API is loaded
 
     setIsPlaying(true);
-    const truckIds =
-      selectedTruckId === "all"
-        ? trucks.map((t) => t.t_id)
-        : [Number(selectedTruckId)];
+    const truckIds = trucks.map((t) => t.t_id);
 
     truckIds.forEach((truckId) => {
       let step = 0;
@@ -188,7 +203,7 @@ const Maps = () => {
         });
       }, 50);
     });
-  }, [isPlaying, routes, selectedTruckId, trucks, isApiLoaded]);
+  }, [isPlaying, routes, trucks, isLoaded]);
 
   const pauseAnimation = useCallback(() => {
     setIsPlaying(false);
@@ -210,103 +225,161 @@ const Maps = () => {
   }, [routes]);
 
   // Calculate center point
-  const center =
-    selectedTruckId === "all"
-      ? DEPOT_LOCATION
-      : trucks.find((t) => t.t_id === Number(selectedTruckId))?.bins[0] ||
-        DEPOT_LOCATION;
+  const center = DEPOT_LOCATION;
 
-  // Filtered trucks based on selection
-  const filteredTrucks =
-    selectedTruckId === "all"
-      ? trucks
-      : trucks.filter((t) => t.t_id === Number(selectedTruckId));
+  const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
 
+  if (!isLoaded)
+    return <div className="loading-message">Loading Google Maps...</div>;
   if (loading)
     return <div className="loading-message">Loading map data...</div>;
   if (error) return <div className="error-message">{error}</div>;
 
   return (
-    // Use an environment variable for the API key for security and flexibility
-    <LoadScript
-      googleMapsApiKey={"AIzaSyD227H6VuZdZE7RNLjFnq2YWAjfMlNf_z0"}
-      onLoad={onGoogleApiLoad} // Call onGoogleApiLoad when the script is loaded
-      libraries={["geometry", "places", "marker"]}
-    >
-      <div className="map-controls">
-        <div className="animation-controls">
-          <button onClick={startAnimation} disabled={isPlaying || loading}>
-            ▶ Start
-          </button>
-          <button onClick={pauseAnimation} disabled={!isPlaying || loading}>
-            ⏸ Pause
-          </button>
-          <button onClick={resetAnimation} disabled={loading}>
-            ⏹ Reset
-          </button>
-        </div>
-      </div>
+    <div>
+      <GridContainer>
+        <GridItem xs={12}>
+          <Card>
+            <CardHeader color="success" stats icon>
+              <CardIcon color="success">
+                <Icon>map</Icon>
+              </CardIcon>
+              <p className={classes.cardCategory}>
+                Live Simulation - Today&apos;s Routes
+              </p>
+              <h3 className={classes.cardTitle}>Truck Fleet Movement</h3>
+            </CardHeader>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                padding: "16px",
+                gap: "10px",
+              }}
+            >
+              <Button
+                onClick={startAnimation}
+                disabled={isPlaying || loading || isWeekend}
+                variant="contained"
+                color="primary"
+              >
+                <FontAwesomeIcon icon={faPlay} style={{ marginRight: "8px" }} />
+                Start
+              </Button>
+              <Button
+                onClick={pauseAnimation}
+                disabled={!isPlaying || loading || isWeekend}
+                variant="contained"
+                color="default"
+              >
+                <FontAwesomeIcon
+                  icon={faPause}
+                  style={{ marginRight: "8px" }}
+                />
+                Pause
+              </Button>
+              <Button
+                onClick={resetAnimation}
+                disabled={loading || isWeekend}
+                variant="contained"
+                color="secondary"
+              >
+                <FontAwesomeIcon icon={faStop} style={{ marginRight: "8px" }} />
+                Reset
+              </Button>
+            </div>
 
-      <GoogleMap
-        mapContainerStyle={MAP_CONTAINER_STYLE}
-        center={center}
-        zoom={DEFAULT_ZOOM}
-        onLoad={setMap}
-        options={{
-          gestureHandling: "cooperative",
-          scrollwheel: false, // allow zooming via scroll
-        }}
-      >
-        {filteredTrucks.map((truck) => (
-          <React.Fragment key={truck.t_id}>
-            {/* Truck Marker */}
-            {isApiLoaded && (
-              <Marker
-                position={positions[truck.t_id] || DEPOT_LOCATION}
-                title={`Truck: ${truck.t_plate}\nDriver: ${truck.driverName}`}
-                icon={{
-                  url: truck.t_id === 1 ? TRUCK_ICONS.blue : TRUCK_ICONS.orange,
-                  // Ensure window.google.maps.Size is accessed only after API is loaded
-                  scaledSize: new window.google.maps.Size(50, 30),
-                }}
-              />
-            )}
-
-            {/* Route Polyline
-            {routes[truck.t_id]?.length > 0 && (
-              <Polyline
-                path={routes[truck.t_id]}
+            <div style={{ position: "relative" }}>
+              {isWeekend && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: "rgba(255, 255, 255, 0.8)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 10,
+                    borderRadius: "0 0 6px 6px",
+                  }}
+                >
+                  <h3 style={{ color: "#555", textAlign: "center" }}>
+                    Today is a Weekend
+                    <br />
+                    <small>No bins or routes scheduled for today.</small>
+                  </h3>
+                </div>
+              )}
+              <GoogleMap
+                mapContainerStyle={MAP_CONTAINER_STYLE}
+                center={center}
+                zoom={DEFAULT_ZOOM}
+                onLoad={setMap}
                 options={{
-                  strokeColor: truck.t_id === 1 ? "#3366FF" : "#FF9900",
-                  strokeWeight: 5,
-                  strokeOpacity: 0.7,
+                  gestureHandling: "cooperative",
+                  scrollwheel: false, // allow zooming via scroll
                 }}
-              />
-            )} */}
-          </React.Fragment>
-        ))}
+              >
+                {trucks.map((truck) => (
+                  <React.Fragment key={truck.t_id}>
+                    {/* Truck Marker */}
+                    {isLoaded && (
+                      <Marker
+                        position={positions[truck.t_id] || DEPOT_LOCATION}
+                        title={`Truck: ${truck.t_plate}\nDriver: ${truck.driverName}`}
+                        icon={{
+                          url:
+                            truck.t_id === 1
+                              ? TRUCK_ICONS.blue
+                              : TRUCK_ICONS.orange,
+                          // Ensure window.google.maps.Size is accessed only after API is loaded
+                          scaledSize: new window.google.maps.Size(50, 30),
+                        }}
+                      />
+                    )}
 
-        {/* Bin Markers - rendered separately for better performance */}
-        {smartbins.map(
-          (bin) =>
-            isApiLoaded && ( // Conditionally render bin markers too
-              <Marker
-                key={bin.sb_id}
-                position={{ lat: bin.lat, lng: bin.lng }}
-                title={`Bin: ${bin.sb_plate}\nStatus: ${bin.sb_status}`}
-                icon={{
-                  url:
-                    bin.sb_status === "Active"
-                      ? BIN_ICONS.active
-                      : BIN_ICONS.inactive,
-                  // Ensure window.google.maps.Size is accessed only after API is loaded
-                  scaledSize: new window.google.maps.Size(32, 32),
-                }}
-              />
-            )
-        )}
-      </GoogleMap>
-    </LoadScript>
+                    {/* Route Polyline */}
+                    {routes[truck.t_id]?.length > 0 && (
+                      <Polyline
+                        path={routes[truck.t_id]}
+                        options={{
+                          strokeColor: truck.t_id === 1 ? "#3366FF" : "#FF9900",
+                          strokeWeight: 5,
+                          strokeOpacity: 0.7,
+                        }}
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
+
+                {/* Bin Markers - rendered separately for better performance */}
+                {smartbins.map(
+                  (bin) =>
+                    isLoaded && ( // Conditionally render bin markers too
+                      <Marker
+                        key={bin.sb_id}
+                        position={{ lat: bin.lat, lng: bin.lng }}
+                        title={`Bin: ${bin.sb_plate}\nStatus: ${bin.sb_status}`}
+                        icon={{
+                          url:
+                            bin.sb_status === "Active"
+                              ? BIN_ICONS.active
+                              : BIN_ICONS.inactive,
+                          // Ensure window.google.maps.Size is accessed only after API is loaded
+                          scaledSize: new window.google.maps.Size(32, 32),
+                        }}
+                      />
+                    )
+                )}
+              </GoogleMap>
+            </div>
+          </Card>
+        </GridItem>
+      </GridContainer>
+    </div>
   );
 };
 

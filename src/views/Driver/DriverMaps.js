@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   LoadScript,
+  Marker,
   GoogleMap,
   TrafficLayer,
   DirectionsRenderer,
@@ -47,12 +48,17 @@ const MAP_PANEL_STYLE = {
   height: "100%",
 };
 
-const DEFAULT_ZOOM = 14; // Adjusted zoom for better overview of routes
-const DEPOT_LOCATION = { lat: 1.4234, lng: 103.6312 }; // Your depot location
+const DEFAULT_ZOOM = 14;
+const DEPOT_LOCATION = { lat: 1.4234, lng: 103.6312 }; // depot location
 
 const TRUCK_ICONS = {
   blue: truckblue,
   orange: truckgreen,
+};
+
+const BIN_ICONS = {
+  Exist: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+  Deleted: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
 };
 
 const googleMapsLibraries = ["geometry", "places", "marker"];
@@ -62,7 +68,6 @@ const DriverMaps = () => {
   const currentDriverId = parseInt(localStorage.getItem("userId")); // Assuming userId is stored in localStorage
   const googleMapRef = useRef(null);
   const directionsService = useRef(null);
-  const markers = useRef([]);
 
   const [isMapInstanceReady, setIsMapInstanceReady] = useState(false);
   const [driverTruck, setDriverTruck] = useState(null);
@@ -71,18 +76,36 @@ const DriverMaps = () => {
   const [error, setError] = useState(null);
   const [isGoogleApiLoaded, setIsGoogleApiLoaded] = useState(false);
   const [directionsResult, setDirectionsResult] = useState(null); // Keep this for actual route display
+  const [truckPosition, setTruckPosition] = useState(null);
 
   // Navigation states
   const [isNavigationStarted, setIsNavigationStarted] = useState(false);
   const [currentLegIndex, setCurrentLegIndex] = useState(0);
   const [routeFinished, setRouteFinished] = useState(false);
   const [infoMessage, setInfoMessage] = useState(null);
-  const [showTraffic, setShowTraffic] = useState(true);
+  const [showTraffic] = useState(true);
+  const [currentLegSteps, setCurrentLegSteps] = useState([]);
+  const [totalDistance, setTotalDistance] = useState(null);
+  const [totalDuration, setTotalDuration] = useState(null);
 
   const [selectedDay, setSelectedDay] = useState(
     new Date().toLocaleString("en-US", { weekday: "long" })
   );
-  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  const daysOfWeek = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
+
+  // Check if current day is weekend
+  const isWeekend = selectedDay === "Saturday" || selectedDay === "Sunday";
+  const isCurrentDayWeekend =
+    new Date().toLocaleString("en-US", { weekday: "long" }) === "Saturday" ||
+    new Date().toLocaleString("en-US", { weekday: "long" }) === "Sunday";
 
   /* // Helper to get today's day name
   const getTodayDayName = () => {
@@ -103,79 +126,6 @@ const DriverMaps = () => {
   useEffect(() => {
     setSelectedDay(getTodayDayName());
   }, []); */
-
-  const addCustomMarkers = useCallback(
-    (response, binsToMark, truckToMark, currentMarkerPosition = null) => {
-      console.log("addCustomMarkers called. Response present:", !!response);
-      if (!googleMapRef.current) {
-        console.warn("Skipping marker addition: map not ready.");
-        return;
-      }
-
-      // Clear existing markers
-      markers.current.forEach((marker) => marker.setMap(null));
-      markers.current = [];
-
-      const route = response?.routes?.[0];
-      const hasRoute = !!route;
-
-      // Add depot marker if a route is displayed or if it's the main truck data
-      if (hasRoute || (truckToMark && binsToMark.length > 0)) {
-        const depotMarker = new window.google.maps.Marker({
-          position: DEPOT_LOCATION,
-          map: googleMapRef.current,
-          title: "Depot (Start Location)",
-          zIndex: window.google.maps.Marker.MAX_ZINDEX + 1,
-        });
-        markers.current.push(depotMarker);
-      }
-
-      // Add bin markers
-      console.log("Bins to mark:", binsToMark);
-      binsToMark.forEach((bin, index) => {
-        const marker = new window.google.maps.Marker({
-          position: {
-            lat: parseFloat(bin.sb_latitude),
-            lng: parseFloat(bin.sb_longitude),
-          },
-          map: googleMapRef.current,
-          title: `Bin ID: ${bin.sb_id}\nPlate: ${bin.sb_plate}\nDay: ${bin.sb_day}`,
-          label: {
-            text: String(index + 1),
-            color: "black",
-            fontWeight: "bold",
-          },
-          zIndex: window.google.maps.Marker.MAX_ZINDEX,
-        });
-        markers.current.push(marker);
-      });
-
-      // Add truck marker
-      const truckPos =
-        currentMarkerPosition ||
-        (truckToMark && truckToMark.t_latitude && truckToMark.t_longitude
-          ? {
-              lat: parseFloat(truckToMark.t_latitude),
-              lng: parseFloat(truckToMark.t_longitude),
-            }
-          : null);
-
-      if (truckPos) {
-        const truckMarker = new window.google.maps.Marker({
-          position: truckPos,
-          map: googleMapRef.current,
-          icon: {
-            url: truckToMark.t_id === 1 ? TRUCK_ICONS.blue : TRUCK_ICONS.orange,
-            scaledSize: new window.google.maps.Size(50, 30),
-          },
-          title: `Your Truck: ${truckToMark.plate}`,
-          zIndex: window.google.maps.Marker.MAX_ZINDEX + 2,
-        });
-        markers.current.push(truckMarker);
-      }
-    },
-    []
-  );
 
   // --- Data Fetching for Initial Truck and its Bins ---
   useEffect(() => {
@@ -213,6 +163,13 @@ const DriverMaps = () => {
 
         if (foundTruck) {
           setDriverTruck(foundTruck);
+
+          if (foundTruck.t_latitude && foundTruck.t_longitude) {
+            setTruckPosition({
+              lat: parseFloat(foundTruck.t_latitude),
+              lng: parseFloat(foundTruck.t_longitude),
+            });
+          }
 
           // If foundTruck has no bins, try assigning from filteredBins
           const binsForTruck = foundTruck.bins?.length
@@ -253,11 +210,18 @@ const DriverMaps = () => {
       setLoading(true);
       setError(null);
       setDirectionsResult(null); // Clear previous route
-      markers.current.forEach((marker) => marker.setMap(null)); // Clear previous markers
-      markers.current = [];
       setIsNavigationStarted(false); // Reset navigation when new route is fetched
       setCurrentLegIndex(0);
       setRouteFinished(false);
+
+      // Prevent fetching routes for weekend days
+      if (day === "Saturday" || day === "Sunday") {
+        setInfoMessage(`It's the weekend. No routes to display for ${day}.`);
+        setAssignedBins([]);
+        setDirectionsResult(null);
+        setLoading(false);
+        return; // Exit early
+      }
 
       if (
         !isGoogleApiLoaded ||
@@ -280,6 +244,7 @@ const DriverMaps = () => {
         );
 
         if (truckRouteData && truckRouteData.bins.length > 0) {
+          setAssignedBins(truckRouteData.bins);
           const binsForRoute = truckRouteData.bins.map((bin) => ({
             lat: parseFloat(bin.sb_latitude),
             lng: parseFloat(bin.sb_longitude),
@@ -297,10 +262,12 @@ const DriverMaps = () => {
                 }
               : DEPOT_LOCATION;
 
-          const destination = binsForRoute[binsForRoute.length - 1]; // Last bin as destination
-          const waypoints = binsForRoute
-            .slice(0, -1)
-            .map((bin) => ({ location: bin, stopover: true }));
+          // Last bin is a waypoint, final destination is the Depot
+          const destination = DEPOT_LOCATION;
+          const waypoints = binsForRoute.map((bin) => ({
+            location: bin,
+            stopover: true,
+          }));
 
           directionsService.current.route(
             {
@@ -313,7 +280,22 @@ const DriverMaps = () => {
             (result, status) => {
               if (status === "OK" && result) {
                 setDirectionsResult(result); // Only this!
-                addCustomMarkers(result, binsForRoute, truckRouteData, origin);
+
+                // Calculate total distance and duration
+                let distance = 0;
+                let duration = 0;
+                result.routes[0].legs.forEach((leg) => {
+                  distance += leg.distance.value;
+                  duration += leg.duration.value;
+                });
+                setTotalDistance((distance / 1000).toFixed(2)); // convert to km
+                setTotalDuration(Math.round(duration / 60)); // convert to minutes
+
+                // Pre-load the first leg's steps to show before navigation starts
+                if (result.routes[0]?.legs?.[0]?.steps) {
+                  setCurrentLegSteps(result.routes[0].legs[0].steps);
+                }
+
                 if (googleMapRef.current) {
                   googleMapRef.current.fitBounds(result.routes[0].bounds);
                 }
@@ -330,9 +312,10 @@ const DriverMaps = () => {
           setInfoMessage(`No bins assigned for ${day} for your truck.`);
           setAssignedBins([]);
           setDirectionsResult(null);
+          setTotalDistance(null);
+          setTotalDuration(null);
           // If no route, still display the truck if it exists
           if (driverTruck) {
-            addCustomMarkers(null, [], driverTruck); // Only truck marker
             if (googleMapRef.current) {
               googleMapRef.current.panTo({
                 lat: parseFloat(driverTruck.t_latitude),
@@ -349,14 +332,8 @@ const DriverMaps = () => {
         setDirectionsResult(null);
       }
     },
-    [
-      currentDriverId,
-      isGoogleApiLoaded,
-      isMapInstanceReady,
-      driverTruck,
-      addCustomMarkers,
-    ]
-  ); // Added driverTruck, addCustomMarkers to dependencies
+    [currentDriverId, isGoogleApiLoaded, isMapInstanceReady, driverTruck]
+  ); // Added driverTruck to dependencies
 
   // Effect to call route fetching when selectedDay or API load status changes
   useEffect(() => {
@@ -384,8 +361,6 @@ const DriverMaps = () => {
   }, []);
 
   const onMapUnmount = useCallback(() => {
-    markers.current.forEach((marker) => marker.setMap(null));
-    markers.current = [];
     googleMapRef.current = null;
     directionsService.current = null;
     setIsGoogleApiLoaded(false);
@@ -408,23 +383,16 @@ const DriverMaps = () => {
 
       // Update truck position to the start of the first leg/route origin
       const firstLeg = directionsResult.routes[0].legs[0];
-      addCustomMarkers(
-        directionsResult,
-        assignedBins.filter((bin) => bin.sb_day.includes(selectedDay)),
-        driverTruck,
-        firstLeg.start_location
-      );
-      googleMapRef.current.panTo(firstLeg.start_location);
+      const startPosition = firstLeg.start_location.toJSON();
+      setTruckPosition(startPosition);
+      setCurrentLegSteps(firstLeg.steps);
+      if (googleMapRef.current) {
+        googleMapRef.current.panTo(startPosition);
+      }
     } else {
       setInfoMessage("No route to start navigation.");
     }
-  }, [
-    directionsResult,
-    assignedBins,
-    driverTruck,
-    selectedDay,
-    addCustomMarkers,
-  ]);
+  }, [directionsResult]);
 
   const handleNextLeg = useCallback(() => {
     if (
@@ -435,17 +403,16 @@ const DriverMaps = () => {
       const nextIndex = currentLegIndex + 1;
       setCurrentLegIndex(nextIndex);
       const nextLeg = directionsResult.routes[0].legs[nextIndex];
+      const nextPosition = nextLeg.start_location.toJSON();
+      setTruckPosition(nextPosition);
+      setCurrentLegSteps(nextLeg.steps);
 
       // Update truck position to the start of the next leg
-      addCustomMarkers(
-        directionsResult,
-        assignedBins.filter((bin) => bin.sb_day.includes(selectedDay)),
-        driverTruck,
-        nextLeg.start_location
-      );
-      googleMapRef.current.panTo(nextLeg.start_location);
+      if (googleMapRef.current) {
+        googleMapRef.current.panTo(nextPosition);
+      }
       setInfoMessage(
-        `Moving to next leg: ${nextIndex + 1}/${
+        `Moving to next stop: ${nextIndex + 1}/${
           directionsResult.routes[0].legs.length
         }`
       );
@@ -455,140 +422,121 @@ const DriverMaps = () => {
       currentLegIndex === directionsResult.routes[0].legs.length - 1
     ) {
       setInfoMessage(
-        "You are on the last leg. Click 'Finish Route' to complete."
+        "You are on the last destination. Click 'Finish Route' to complete."
       );
     } else {
       setInfoMessage("No active navigation.");
     }
-  }, [
-    directionsResult,
-    currentLegIndex,
-    assignedBins,
-    driverTruck,
-    selectedDay,
-    addCustomMarkers,
-  ]);
+  }, [directionsResult, currentLegIndex]);
 
   const handlePreviousLeg = useCallback(() => {
     if (currentLegIndex > 0) {
       const prevIndex = currentLegIndex - 1;
       setCurrentLegIndex(prevIndex);
       const prevLeg = directionsResult.routes[0].legs[prevIndex];
+      const prevPosition = prevLeg.start_location.toJSON();
+      setTruckPosition(prevPosition);
+      setCurrentLegSteps(prevLeg.steps);
 
       // Update truck position to the start of the previous leg
-      addCustomMarkers(
-        directionsResult,
-        assignedBins.filter((bin) => bin.sb_day.includes(selectedDay)),
-        driverTruck,
-        prevLeg.start_location
-      );
-      googleMapRef.current.panTo(prevLeg.start_location);
+      if (googleMapRef.current) {
+        googleMapRef.current.panTo(prevPosition);
+      }
       setInfoMessage(
-        `Moving to previous leg: ${prevIndex + 1}/${
+        `Moving to previous stop: ${prevIndex + 1}/${
           directionsResult.routes[0].legs.length
         }`
       );
     } else {
       setInfoMessage("You are at the first leg.");
     }
-  }, [
-    directionsResult,
-    currentLegIndex,
-    assignedBins,
-    driverTruck,
-    selectedDay,
-    addCustomMarkers,
-  ]);
+  }, [directionsResult, currentLegIndex]);
 
   const handleFinishRoute = useCallback(() => {
     setIsNavigationStarted(false);
     setRouteFinished(true);
     setInfoMessage("Route completed! Great job!");
-    // Re-add only the truck marker at its final theoretical position or depot
-    if (driverTruck) {
-      addCustomMarkers(null, [], driverTruck, {
-        lat: parseFloat(driverTruck.t_latitude),
-        lng: parseFloat(driverTruck.t_longitude),
-      });
-      googleMapRef.current.panTo({
-        lat: parseFloat(driverTruck.t_latitude),
-        lng: parseFloat(driverTruck.t_longitude),
-      });
+
+    if (driverTruck && directionsResult) {
+      const legs = directionsResult.routes[0].legs;
+      const finalPosition = legs[legs.length - 1].end_location.toJSON();
+      setTruckPosition(finalPosition);
+      if (googleMapRef.current) {
+        googleMapRef.current.panTo(finalPosition);
+      }
     }
-  }, [driverTruck, addCustomMarkers]);
+  }, [driverTruck, directionsResult]);
 
   const handleReroute = useCallback(() => {
     if (
-      isNavigationStarted &&
-      directionsResult &&
-      directionsResult.routes.length > 0
+      !isNavigationStarted ||
+      !truckPosition ||
+      !directionsResult ||
+      currentLegIndex >= directionsResult.routes[0].legs.length
     ) {
-      setInfoMessage("Rerouting from current position (simulated).");
-      if (
-        googleMapRef.current &&
-        currentLegIndex < directionsResult.routes[0].legs.length
-      ) {
-        googleMapRef.current.panTo(
-          directionsResult.routes[0].legs[currentLegIndex].start_location
-        );
-      }
-      addCustomMarkers(
-        directionsResult,
-        assignedBins.filter((bin) => bin.sb_day.includes(selectedDay)),
-        driverTruck,
-        directionsResult.routes[0].legs[currentLegIndex].start_location
-      );
-    } else {
-      setInfoMessage("No active navigation to reroute.");
+      setInfoMessage("Cannot reroute without an active destination.");
+      return;
     }
-  }, [
-    isNavigationStarted,
-    directionsResult,
-    currentLegIndex,
-    assignedBins,
-    driverTruck,
-    selectedDay,
-    addCustomMarkers,
-  ]);
 
-  // Function to show only the map (remove markers and traffic layer)
-  const renderOnlyMap = () => {
-    markers.current.forEach((marker) => marker.setMap(null)); // Remove markers
-    markers.current = [];
-    setShowTraffic(false); // Hide traffic layer
-    setInfoMessage("Only map is displayed.");
-  };
+    setLoading(true);
+    setInfoMessage("Finding a better path to the next stop...");
 
-  // Function to reset and show all elements
-  const resetMapDisplay = useCallback(() => {
-    setShowTraffic(true); // Show traffic layer
-    setInfoMessage(null);
-    setIsNavigationStarted(false); // Reset navigation state
+    const currentLeg = directionsResult.routes[0].legs[currentLegIndex];
+    const destination = currentLeg.end_location;
+
+    directionsService.current.route(
+      {
+        origin: truckPosition,
+        destination: destination,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+        drivingOptions: {
+          departureTime: new Date(),
+          trafficModel: window.google.maps.TrafficModel.BEST_GUESS,
+        },
+      },
+      (result, status) => {
+        setLoading(false);
+        if (status === "OK" && result) {
+          const newLeg = result.routes[0].legs[0];
+
+          // Update the specific leg in the directions result
+          const updatedLegs = [...directionsResult.routes[0].legs];
+          updatedLegs[currentLegIndex] = newLeg;
+
+          const updatedResult = { ...directionsResult };
+          updatedResult.routes[0].legs = updatedLegs;
+          setDirectionsResult(updatedResult);
+
+          // Update turn-by-turn steps for the new leg
+          setCurrentLegSteps(newLeg.steps || []);
+
+          // Recalculate total distance and duration
+          let newTotalDistance = 0;
+          let newTotalDuration = 0;
+          updatedLegs.forEach((leg) => {
+            newTotalDistance += leg.distance.value;
+            newTotalDuration += leg.duration.value;
+          });
+          setTotalDistance((newTotalDistance / 1000).toFixed(2));
+          setTotalDuration(Math.round(newTotalDuration / 60));
+
+          setInfoMessage(
+            "Found a faster route to your next stop based on current conditions."
+          );
+        } else {
+          setError(`Rerouting failed: ${status}. Please try again.`);
+        }
+      }
+    );
+  }, [isNavigationStarted, truckPosition, directionsResult, currentLegIndex]);
+
+  // Effect to reset navigation when the selected day changes
+  useEffect(() => {
+    setIsNavigationStarted(false);
     setCurrentLegIndex(0);
     setRouteFinished(false);
-    // This will trigger fetchData and fetchAndDisplayRoute to re-render
-    if (selectedDay) {
-      fetchAndDisplayRoute(selectedDay);
-    } else if (driverTruck) {
-      // Fallback if no day selected but truck data exists
-      addCustomMarkers(null, driverTruck.bins, driverTruck);
-      if (googleMapRef.current) {
-        googleMapRef.current.panTo({
-          lat: parseFloat(driverTruck.t_latitude),
-          lng: parseFloat(driverTruck.t_longitude),
-        });
-      }
-    }
-  }, [selectedDay, driverTruck, fetchAndDisplayRoute, addCustomMarkers]);
-
-  // Effect to reset navigation if directionsResult or selectedDay changes
-  useEffect(() => {
-    if (directionsResult || selectedDay) {
-      setIsNavigationStarted(false);
-      setCurrentLegIndex(0);
-      setRouteFinished(false);
-    }
-  }, [directionsResult, selectedDay]);
+    setCurrentLegSteps([]);
+  }, [selectedDay]);
 
   return (
     <LoadScript
@@ -597,6 +545,57 @@ const DriverMaps = () => {
       onLoad={onGoogleApiLoadedFromLoadScript}
     >
       <div className={classes.root}>
+        <GridContainer>
+          <GridItem xs={12}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 16px",
+                background: "#fff",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                border: "1px solid #e0e0e0",
+              }}
+            >
+              {driverTruck && (
+                <div style={{ fontWeight: "bold", fontSize: "16px" }}>
+                  Plate: {driverTruck.t_plate} | Driver:{" "}
+                  {driverTruck.driver_name}
+                </div>
+              )}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                }}
+              >
+                <FormControl style={{ minWidth: 150 }}>
+                  <InputLabel id="day-select-label">Select Day</InputLabel>
+                  <Select
+                    labelId="day-select-label"
+                    id="day-select"
+                    value={
+                      selectedDay.includes(",")
+                        ? selectedDay.split(",")[0]
+                        : selectedDay
+                    }
+                    onChange={(e) => setSelectedDay(e.target.value)}
+                  >
+                    {daysOfWeek.map((day) => (
+                      <MenuItem key={day} value={day}>
+                        {day}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </div>
+            </div>
+          </GridItem>
+        </GridContainer>
+
         <GridContainer>
           {/* Controls Panel */}
           <GridItem xs={12} sm={6} md={4}>
@@ -608,7 +607,13 @@ const DriverMaps = () => {
                 <p className={classes.cardCategory}>Driver Map View</p>
                 <h3 className={classes.cardTitle}>Route Information</h3>
               </CardHeader>
-              <div style={{ padding: "16px" }}>
+              <div
+                style={{
+                  height: "65vh",
+                  overflowY: "auto",
+                  padding: "16px",
+                }}
+              >
                 {loading && <p>Loading data...</p>}
                 {error && <p style={{ color: "red" }}>Error: {error}</p>}
                 {infoMessage && (
@@ -621,17 +626,113 @@ const DriverMaps = () => {
                   </p>
                 )}
 
+                {/* ETA and Distance Display */}
+                {directionsResult && (
+                  <div
+                    style={{
+                      margin: "16px 0",
+                      padding: "12px",
+                      background: "#f8f9fa",
+                      border: "1px solid #dee2e6",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <p style={{ margin: 0, fontWeight: "bold" }}>
+                      Total Trip: {totalDistance} km, Approx. {totalDuration}{" "}
+                      mins
+                    </p>
+                    {isNavigationStarted && (
+                      <p style={{ marginTop: "8px", marginBottom: 0 }}>
+                        To Next Stop:{" "}
+                        {
+                          directionsResult.routes[0].legs[currentLegIndex]
+                            .distance.text
+                        }{" "}
+                        (
+                        {
+                          directionsResult.routes[0].legs[currentLegIndex]
+                            .duration.text
+                        }
+                        )
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Current/Next Bin Display */}
+                {isNavigationStarted && assignedBins.length > 0 && (
+                  <div
+                    style={{
+                      margin: "16px 0",
+                      padding: "12px",
+                      background: "#e8f4fd",
+                      border: "1px solid #d1eaff",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <p style={{ margin: 0, fontWeight: "bold" }}>
+                      Current Stop:{" "}
+                      {currentLegIndex < assignedBins.length
+                        ? `Bin at ${assignedBins[currentLegIndex]?.sb_plate}`
+                        : "Return to Depot"}
+                    </p>
+                    {directionsResult &&
+                      currentLegIndex <
+                        directionsResult.routes[0].legs.length - 1 && (
+                        <p style={{ marginTop: "8px", marginBottom: 0 }}>
+                          Next Stop:{" "}
+                          {currentLegIndex + 1 < assignedBins.length
+                            ? `Bin at ${
+                                assignedBins[currentLegIndex + 1]?.sb_plate
+                              }`
+                            : "Return to Depot"}
+                        </p>
+                      )}
+                  </div>
+                )}
+
                 {!loading && !error && (
                   <div>
                     {driverTruck ? (
                       <div>
-                        <h4>Truck Details:</h4>
-                        <p style={{ fontWeight: "bold", fontSize: "16px" }}>
-                          Plate: {driverTruck.t_plate} | Driver:{" "}
-                          {driverTruck.driver_name}
-                        </p>
-                        {/* Day Selection Dropdown - THIS IS ALREADY THERE! */}
-                        <FormControl fullWidth style={{ marginBottom: "10px" }}>
+                        {/* Weekend Message */}
+                        {isWeekend && (
+                          <div
+                            style={{
+                              backgroundColor: "#fff3cd",
+                              border: "1px solid #ffeaa7",
+                              borderRadius: "8px",
+                              padding: "12px",
+                              marginBottom: "15px",
+                            }}
+                          >
+                            <p
+                              style={{
+                                color: "#856404",
+                                margin: "0",
+                                fontWeight: "bold",
+                                fontSize: "14px",
+                              }}
+                            >
+                              🏖️ No work today - It&apos;s the weekend!
+                            </p>
+                            <p
+                              style={{
+                                color: "#856404",
+                                margin: "5px 0 0 0",
+                                fontSize: "12px",
+                              }}
+                            >
+                              You can view Monday&apos;s work schedule below.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Day Selection Dropdown */}
+                        <FormControl
+                          fullWidth
+                          style={{ marginBottom: "10px", display: "none" }}
+                        >
                           <InputLabel id="day-select-label">
                             Select Day
                           </InputLabel>
@@ -653,6 +754,23 @@ const DriverMaps = () => {
                           </Select>
                         </FormControl>
 
+                        {/* Quick Monday View Button for Weekends */}
+                        {isCurrentDayWeekend && (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => setSelectedDay("Monday")}
+                            style={{
+                              marginBottom: "15px",
+                              backgroundColor: "#28a745",
+                              color: "white",
+                              display: "none",
+                            }}
+                          >
+                            📅 View Monday&apos;s Schedule
+                          </Button>
+                        )}
+
                         {/* Navigation Buttons */}
                         <div
                           style={{
@@ -662,139 +780,213 @@ const DriverMaps = () => {
                             marginBottom: "20px",
                           }}
                         >
-                          {!isNavigationStarted &&
-                            !routeFinished &&
-                            directionsResult && (
-                              <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={handleStartNavigation}
-                                disabled={
-                                  !directionsResult ||
-                                  directionsResult.routes[0].legs.length === 0
-                                }
+                          {isWeekend ? (
+                            <div
+                              style={{
+                                backgroundColor: "#f8f9fa",
+                                border: "1px solid #dee2e6",
+                                borderRadius: "8px",
+                                padding: "12px",
+                                width: "100%",
+                              }}
+                            >
+                              <p
+                                style={{
+                                  color: "#6c757d",
+                                  margin: "0",
+                                  fontStyle: "italic",
+                                  textAlign: "center",
+                                }}
                               >
-                                <FontAwesomeIcon
-                                  icon={faArrowRight}
-                                  style={{ marginRight: "8px" }}
-                                />
-                                Start Navigation
-                              </Button>
-                            )}
-
-                          {isNavigationStarted && !routeFinished && (
+                                🚫 Navigation disabled - No work on weekends
+                              </p>
+                            </div>
+                          ) : (
                             <>
-                              <Button
-                                variant="contained"
-                                color="default"
-                                onClick={handlePreviousLeg}
-                                disabled={currentLegIndex === 0}
-                              >
-                                <FontAwesomeIcon
-                                  icon={faArrowLeft}
-                                  style={{ marginRight: "8px" }}
-                                />
-                                Previous Leg
-                              </Button>
-                              <Button
-                                variant="contained"
-                                color="info"
-                                onClick={handleNextLeg}
-                                disabled={
-                                  currentLegIndex ===
-                                  (directionsResult?.routes[0]?.legs?.length ||
-                                    0) -
-                                    1
-                                }
-                              >
-                                <FontAwesomeIcon
-                                  icon={faArrowRight}
-                                  style={{ marginRight: "8px" }}
-                                />
-                                Next Leg
-                              </Button>
-                              <Button
-                                variant="contained"
-                                color="secondary"
-                                onClick={handleReroute}
-                              >
-                                <FontAwesomeIcon
-                                  icon={faRedo}
-                                  style={{ marginRight: "8px" }}
-                                />
-                                Reroute
-                              </Button>
-                              <Button
-                                variant="contained"
-                                color="success"
-                                onClick={handleFinishRoute}
-                                disabled={
-                                  currentLegIndex !==
-                                  (directionsResult?.routes[0]?.legs?.length ||
-                                    0) -
-                                    1
-                                }
-                              >
-                                <FontAwesomeIcon
-                                  icon={faCheck}
-                                  style={{ marginRight: "8px" }}
-                                />
-                                Finish Route
-                              </Button>
-                            </>
-                          )}
+                              {!isNavigationStarted &&
+                                !routeFinished &&
+                                directionsResult && (
+                                  <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={handleStartNavigation}
+                                    disabled={
+                                      !directionsResult ||
+                                      directionsResult.routes[0].legs.length ===
+                                        0
+                                    }
+                                  >
+                                    <FontAwesomeIcon
+                                      icon={faArrowRight}
+                                      style={{ marginRight: "8px" }}
+                                    />
+                                    Start Navigation
+                                  </Button>
+                                )}
 
-                          {routeFinished && (
-                            <p style={{ color: "green", fontWeight: "bold" }}>
-                              Route Completed!
-                            </p>
+                              {isNavigationStarted && !routeFinished && (
+                                <>
+                                  <Button
+                                    variant="contained"
+                                    color="default"
+                                    onClick={handlePreviousLeg}
+                                    disabled={currentLegIndex === 0}
+                                  >
+                                    <FontAwesomeIcon
+                                      icon={faArrowLeft}
+                                      style={{ marginRight: "8px" }}
+                                    />
+                                  </Button>
+                                  <Button
+                                    variant="contained"
+                                    color="info"
+                                    onClick={handleNextLeg}
+                                    disabled={
+                                      currentLegIndex ===
+                                      (directionsResult?.routes[0]?.legs
+                                        ?.length || 0) -
+                                        1
+                                    }
+                                  >
+                                    <FontAwesomeIcon
+                                      icon={faArrowRight}
+                                      style={{ marginRight: "8px" }}
+                                    />
+                                  </Button>
+                                  <Button
+                                    variant="contained"
+                                    color="secondary"
+                                    onClick={handleReroute}
+                                  >
+                                    <FontAwesomeIcon
+                                      icon={faRedo}
+                                      style={{ marginRight: "8px" }}
+                                    />
+                                  </Button>
+                                  <Button
+                                    variant="contained"
+                                    color="success"
+                                    onClick={handleFinishRoute}
+                                    disabled={
+                                      currentLegIndex !==
+                                      (directionsResult?.routes[0]?.legs
+                                        ?.length || 0) -
+                                        1
+                                    }
+                                  >
+                                    <FontAwesomeIcon
+                                      icon={faCheck}
+                                      style={{ marginRight: "8px" }}
+                                    />
+                                  </Button>
+                                </>
+                              )}
+
+                              {routeFinished && (
+                                <p
+                                  style={{ color: "green", fontWeight: "bold" }}
+                                >
+                                  Route Completed!
+                                </p>
+                              )}
+                            </>
                           )}
                         </div>
 
-                        <h4>Assigned Bins for {selectedDay}:</h4>
-                        {assignedBins.length > 0 ? (
-                          <ul>
-                            {assignedBins
-                              .filter((bin) => bin.sb_day.includes(selectedDay))
-                              .map((bin, index) => (
-                                <li
-                                  key={bin.sb_id}
+                        {/* Assigned Bins List (only when not navigating) */}
+                        {!isNavigationStarted && (
+                          <>
+                            <h4>Assigned Bins for {selectedDay}:</h4>
+                            {isWeekend ? (
+                              <div
+                                style={{
+                                  backgroundColor: "#f8f9fa",
+                                  border: "1px solid #dee2e6",
+                                  borderRadius: "8px",
+                                  padding: "12px",
+                                  marginBottom: "15px",
+                                }}
+                              >
+                                <p
                                   style={{
-                                    fontWeight:
-                                      isNavigationStarted &&
-                                      currentLegIndex === index
-                                        ? "bold"
-                                        : "normal",
-                                    color:
-                                      isNavigationStarted &&
-                                      currentLegIndex === index
-                                        ? "green"
-                                        : "inherit",
+                                    color: "#6c757d",
+                                    margin: "0",
+                                    fontStyle: "italic",
                                   }}
                                 >
-                                  Bin {index + 1}: {bin.sb_plate} (Lat:{" "}
-                                  {bin.sb_latitude}, Lng: {bin.sb_longitude})
-                                </li>
-                              ))}
-                          </ul>
-                        ) : (
-                          <p>No bins assigned for {selectedDay}.</p>
+                                  {selectedDay === "Saturday" ||
+                                  selectedDay === "Sunday"
+                                    ? "No bins assigned for weekends. Enjoy your day off! 🏖️"
+                                    : "No bins assigned for this day."}
+                                </p>
+                              </div>
+                            ) : assignedBins.length > 0 ? (
+                              <ul>
+                                {assignedBins
+                                  .filter((bin) =>
+                                    bin.sb_day.includes(selectedDay)
+                                  )
+                                  .map((bin, index) => (
+                                    <li
+                                      key={bin.sb_id}
+                                      style={{
+                                        fontWeight:
+                                          isNavigationStarted &&
+                                          currentLegIndex === index
+                                            ? "bold"
+                                            : "normal",
+                                        color:
+                                          isNavigationStarted &&
+                                          currentLegIndex === index
+                                            ? "green"
+                                            : "inherit",
+                                      }}
+                                    >
+                                      Bin {index + 1}: {bin.sb_plate}
+                                    </li>
+                                  ))}
+                              </ul>
+                            ) : (
+                              <p>No bins assigned for {selectedDay}.</p>
+                            )}
+                          </>
                         )}
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          onClick={renderOnlyMap}
-                          style={{ marginRight: "10px" }}
-                        >
-                          Show Only Map
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={resetMapDisplay}
-                        >
-                          Reset Map View
-                        </Button>
+
+                        {/* Turn-by-turn directions */}
+                        {directionsResult && currentLegSteps.length > 0 && (
+                          <div>
+                            <h4 style={{ marginTop: "20px" }}>
+                              Directions for{" "}
+                              {isNavigationStarted
+                                ? `Destination ${currentLegIndex + 1}`
+                                : "the First Destination"}
+                              :
+                            </h4>
+                            <ul
+                              style={{
+                                listStyleType: "none",
+                                paddingLeft: 0,
+                                maxHeight: "200px",
+                                overflowY: "auto",
+                                border: "1px solid #ddd",
+                                borderRadius: "4px",
+                              }}
+                            >
+                              {currentLegSteps.map((step, index) => (
+                                <li
+                                  key={index}
+                                  style={{
+                                    padding: "8px",
+                                    borderBottom: "1px solid #eee",
+                                  }}
+                                  dangerouslySetInnerHTML={{
+                                    __html: step.instructions,
+                                  }}
+                                />
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <p>
@@ -825,6 +1017,7 @@ const DriverMaps = () => {
                       : DEPOT_LOCATION
                   }
                   zoom={DEFAULT_ZOOM}
+                  mapId="edc944c8707a168748a4e7fc"
                   onLoad={onMapLoad}
                   onUnmount={onMapUnmount}
                   options={{
@@ -840,12 +1033,66 @@ const DriverMaps = () => {
                   {isMapInstanceReady && showTraffic && (
                     <TrafficLayer autoRefresh={true} />
                   )}
+
+                  {/* Directions Renderer */}
                   {directionsResult && isMapInstanceReady && (
                     <DirectionsRenderer
                       directions={directionsResult}
                       options={{ suppressMarkers: true }}
                     />
                   )}
+
+                  {/* Depot Marker */}
+                  <Marker
+                    position={DEPOT_LOCATION}
+                    title="Depot (Start Location)"
+                    icon={{
+                      url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                      scaledSize: new window.google.maps.Size(32, 32),
+                    }}
+                  />
+
+                  {/* Truck Marker */}
+                  {truckPosition && driverTruck && (
+                    <Marker
+                      position={truckPosition}
+                      title={`Your Truck: ${driverTruck.t_plate}`}
+                      icon={{
+                        url:
+                          driverTruck.t_id === 1
+                            ? TRUCK_ICONS.blue
+                            : TRUCK_ICONS.orange,
+                        scaledSize: new window.google.maps.Size(50, 30),
+                      }}
+                      zIndex={999}
+                    />
+                  )}
+
+                  {/* Bin Markers */}
+                  {assignedBins
+                    .filter((bin) => bin.sb_day.includes(selectedDay))
+                    .map((bin, index) => (
+                      <Marker
+                        key={bin.sb_id}
+                        position={{
+                          lat: parseFloat(bin.sb_latitude),
+                          lng: parseFloat(bin.sb_longitude),
+                        }}
+                        title={`Bin ID: ${bin.sb_id}\nPlate: ${bin.sb_plate}\nDay: ${bin.sb_day}`}
+                        label={{
+                          text: String(index + 1),
+                          color: "black",
+                          fontWeight: "bold",
+                        }}
+                        icon={{
+                          url:
+                            bin.sb_status === "Exist"
+                              ? BIN_ICONS.Exist
+                              : BIN_ICONS.Deleted,
+                          scaledSize: new window.google.maps.Size(32, 32),
+                        }}
+                      />
+                    ))}
                 </GoogleMap>
               )}
             </div>

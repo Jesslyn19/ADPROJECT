@@ -11,12 +11,32 @@ import axios from "axios";
 import { DBSCAN } from "density-clustering";
 import truckblue from "assets/img/truck-blue.png";
 import truckgreen from "assets/img/truck-green.png";
-
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faTruck,
+  faPlay,
+  faPause,
+  faStop,
+} from "@fortawesome/free-solid-svg-icons";
+import {
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Card,
+  CardHeader,
+  Icon,
+} from "@material-ui/core";
+import GridContainer from "components/Grid/GridContainer.js";
+import CardIcon from "components/Card/CardIcon.js";
+import GridItem from "components/Grid/GridItem.js";
 const MAP_CONTAINER_STYLE = {
   width: "100%",
   height: "600px",
 };
-
+import { makeStyles } from "@material-ui/core/styles";
+import styles from "assets/jss/material-dashboard-react/views/dashboardStyle.js";
 const TRUCK_ICONS = {
   blue: truckblue,
   orange: truckgreen,
@@ -123,8 +143,9 @@ const assignTrucksToClusters = async (clusters, truckList) => {
 
   return assignedTrucks;
 };
-
+const useStyles = makeStyles(styles);
 const Maps = () => {
+  const classes = useStyles();
   const [map, setMap] = useState(null);
   const [trucks, setTrucks] = useState([]);
   const [smartbins, setSmartbins] = useState([]);
@@ -143,16 +164,20 @@ const Maps = () => {
     "Friday",
     "Saturday",
   ];
-  const [selectedDay, setSelectedDay] = useState(
-    new Date().toLocaleString("en-US", { weekday: "long" })
-  );
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const today = new Date().toLocaleString("en-US", { weekday: "long" });
+    if (today === "Saturday" || today === "Sunday") {
+      return "Monday";
+    }
+    return today;
+  });
 
   const intervalRefs = useRef({});
   const directionsService = useRef(null);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyBrtKCsVbb4w8uhYpG4YV84FhOXRiR79eY",
-    libraries: ["geometry", "places"],
+    googleMapsApiKey: "AIzaSyDr4f-WIYP4FsWF7RW-ElMHMvrB_nGNRNo",
+    libraries: ["geometry", "places", "marker"],
   });
 
   const fetchData = useCallback(async () => {
@@ -218,6 +243,8 @@ const Maps = () => {
   useEffect(() => {
     if (isLoaded && map) {
       const calculateRoutes = () => {
+        if (!directionsService.current) return; // Prevent race condition
+
         const newRoutes = {}; // fresh routes container
         const trucksToRoute =
           selectedTruckId === "all"
@@ -332,140 +359,178 @@ const Maps = () => {
       : trucks.filter((t) => t.t_id === Number(selectedTruckId));
 
   return (
-    <>
-      <div className="map-controls">
-        <button onClick={handleAssignTrucks} style={{ marginLeft: "1rem" }}>
-          🚚 Assign Trucks
-        </button>
-      </div>
-      <div className="map-controls">
-        <label htmlFor="truck-select" style={{ marginLeft: "1rem" }}>
-          Select Truck:
-          <select
-            id="truck-select"
-            value={selectedTruckId}
-            onChange={(e) => setSelectedTruckId(e.target.value)}
-            disabled={loading}
-          >
-            <option value="all">All Trucks</option>
-            {trucks.map((truck) => (
-              <option key={truck.t_id} value={truck.t_id}>
-                {truck.t_plate} - {truck.driverName}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label
-          htmlFor="day-select"
-          style={{ marginRight: "1rem", marginLeft: "1rem" }}
+    <div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "16px",
+          marginBottom: "16px",
+          padding: "16px",
+          background: "#fff",
+          borderRadius: "8px",
+          border: "1px solid #e0e0e0",
+        }}
+      >
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleAssignTrucks}
         >
-          Select Day:
-          <select
+          <FontAwesomeIcon icon={faTruck} style={{ marginRight: "8px" }} />
+          Assign Trucks
+        </Button>
+        <FormControl style={{ minWidth: 150 }}>
+          <InputLabel id="day-select-label">Select Day</InputLabel>
+          <Select
+            labelId="day-select-label"
             id="day-select"
             value={selectedDay}
             onChange={(e) => setSelectedDay(e.target.value)}
             disabled={loading}
           >
             {daysOfWeek.map((day) => (
-              <option key={day} value={day}>
+              <MenuItem key={day} value={day}>
                 {day}
-              </option>
+              </MenuItem>
             ))}
-          </select>
-        </label>
-        <div className="animation-controls">
-          <button
+          </Select>
+        </FormControl>
+        <FormControl style={{ minWidth: 200 }}>
+          <InputLabel id="truck-select-label">Select Truck</InputLabel>
+          <Select
+            labelId="truck-select-label"
+            id="truck-select"
+            value={selectedTruckId}
+            onChange={(e) => setSelectedTruckId(e.target.value)}
+            disabled={loading}
+          >
+            <MenuItem value="all">All Trucks</MenuItem>
+            {trucks.map((truck) => (
+              <MenuItem key={truck.t_id} value={truck.t_id}>
+                {truck.t_plate} - {truck.driverName}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <div style={{ marginLeft: "auto" }}>
+          <Button
+            variant="contained"
+            color="primary"
             onClick={startAnimation}
             disabled={isPlaying || loading}
-            style={{
-              marginLeft: "1rem",
-              marginTop: "1rem",
-              marginBottom: "1rem",
-            }}
+            style={{ marginRight: "10px" }}
           >
-            ▶ Start
-          </button>
-          <button
+            <FontAwesomeIcon icon={faPlay} style={{ marginRight: "8px" }} />
+            Start
+          </Button>
+          <Button
+            variant="contained"
+            color="default"
             onClick={pauseAnimation}
             disabled={!isPlaying || loading}
-            style={{ marginRight: "1rem", marginLeft: "1rem" }}
+            style={{ marginRight: "10px" }}
           >
-            ⏸ Pause
-          </button>
-          <button onClick={resetAnimation} disabled={loading}>
-            ⏹ Reset
-          </button>
+            <FontAwesomeIcon icon={faPause} style={{ marginRight: "8px" }} />
+            Pause
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={resetAnimation}
+            disabled={loading}
+          >
+            <FontAwesomeIcon icon={faStop} style={{ marginRight: "8px" }} />
+            Reset
+          </Button>
         </div>
       </div>
+      <GridContainer>
+        <GridItem xs={12}>
+          <Card>
+            <CardHeader color="warning" stats icon>
+              <CardIcon color="warning">
+                <Icon>map</Icon>
+              </CardIcon>
+              <p className={classes.cardCategory}>Live Map</p>
+              <h3 className={classes.cardTitle}>Truck and Bin Locations</h3>
+            </CardHeader>
+            <GoogleMap
+              mapContainerStyle={MAP_CONTAINER_STYLE}
+              center={center}
+              zoom={DEFAULT_ZOOM}
+              onLoad={setMap}
+              options={{ streetViewControl: false }}
+            >
+              {clusters.map((cluster, index) => {
+                const polygonPath = cluster.bins.map((bin) => ({
+                  lat: bin.lat,
+                  lng: bin.lng,
+                }));
 
-      <GoogleMap
-        mapContainerStyle={MAP_CONTAINER_STYLE}
-        center={center}
-        zoom={DEFAULT_ZOOM}
-        onLoad={setMap}
-        options={{ streetViewControl: false }}
-      >
-        {clusters.map((cluster, index) => {
-          const polygonPath = cluster.bins.map((bin) => ({
-            lat: bin.lat,
-            lng: bin.lng,
-          }));
+                return (
+                  <Polygon
+                    key={`polygon-${index}`}
+                    path={polygonPath}
+                    options={{
+                      fillColor: CLUSTER_COLORS[index % CLUSTER_COLORS.length],
+                      fillOpacity: 0.2,
+                      strokeColor:
+                        CLUSTER_COLORS[index % CLUSTER_COLORS.length],
+                      strokeOpacity: 0.8,
+                      strokeWeight: 2,
+                      clickable: false,
+                      zIndex: 1,
+                    }}
+                  />
+                );
+              })}
 
-          return (
-            <Polygon
-              key={`polygon-${index}`}
-              path={polygonPath}
-              options={{
-                fillColor: CLUSTER_COLORS[index % CLUSTER_COLORS.length],
-                fillOpacity: 0.2,
-                strokeColor: CLUSTER_COLORS[index % CLUSTER_COLORS.length],
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                clickable: false,
-                zIndex: 1,
-              }}
-            />
-          );
-        })}
+              {filteredTrucks.map((truck) => (
+                <React.Fragment key={truck.t_id}>
+                  <Marker
+                    position={positions[truck.t_id] || DEPOT_LOCATION}
+                    title={`Truck: ${truck.t_plate}\nDriver: ${truck.driverName}`}
+                    icon={{
+                      url:
+                        truck.t_id === 1
+                          ? TRUCK_ICONS.blue
+                          : TRUCK_ICONS.orange,
+                      scaledSize: new window.google.maps.Size(50, 30),
+                    }}
+                  />
+                  {routes[truck.t_id]?.length > 0 && (
+                    <Polyline
+                      path={routes[truck.t_id]}
+                      options={{
+                        strokeColor: truck.t_id === 1 ? "#3366FF" : "#FF9900",
+                        strokeWeight: 5,
+                        strokeOpacity: 0.7,
+                      }}
+                    />
+                  )}
+                </React.Fragment>
+              ))}
 
-        {filteredTrucks.map((truck) => (
-          <React.Fragment key={truck.t_id}>
-            <Marker
-              position={positions[truck.t_id] || DEPOT_LOCATION}
-              title={`Truck: ${truck.t_plate}\nDriver: ${truck.driverName}`}
-              icon={{
-                url: truck.t_id === 1 ? TRUCK_ICONS.blue : TRUCK_ICONS.orange,
-                scaledSize: new window.google.maps.Size(50, 30),
-              }}
-            />
-            {routes[truck.t_id]?.length > 0 && (
-              <Polyline
-                path={routes[truck.t_id]}
-                options={{
-                  strokeColor: truck.t_id === 1 ? "#3366FF" : "#FF9900",
-                  strokeWeight: 5,
-                  strokeOpacity: 0.7,
-                }}
-              />
-            )}
-          </React.Fragment>
-        ))}
-
-        {smartbins.map((bin) => (
-          <Marker
-            key={bin.sb_id}
-            position={{ lat: bin.lat, lng: bin.lng }}
-            title={`Bin: ${bin.sb_plate}\nStatus: ${bin.sb_status}`}
-            icon={{
-              url:
-                bin.sb_status === "Exist" ? BIN_ICONS.Exist : BIN_ICONS.Deleted,
-              scaledSize: new window.google.maps.Size(32, 32),
-            }}
-          />
-        ))}
-      </GoogleMap>
-    </>
+              {smartbins.map((bin) => (
+                <Marker
+                  key={bin.sb_id}
+                  position={{ lat: bin.lat, lng: bin.lng }}
+                  title={`Bin: ${bin.sb_plate}\nStatus: ${bin.sb_status}`}
+                  icon={{
+                    url:
+                      bin.sb_status === "Exist"
+                        ? BIN_ICONS.Exist
+                        : BIN_ICONS.Deleted,
+                    scaledSize: new window.google.maps.Size(32, 32),
+                  }}
+                />
+              ))}
+            </GoogleMap>
+          </Card>
+        </GridItem>
+      </GridContainer>
+    </div>
   );
 };
 

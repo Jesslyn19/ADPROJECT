@@ -240,7 +240,7 @@ export default function Dashboard() {
       <GridContainer>
         <GridItem xs={12} sm={12} md={12}>
           <div>
-            <MapComponent></MapComponent>
+            <MapComponent />
           </div>
         </GridItem>
       </GridContainer>
