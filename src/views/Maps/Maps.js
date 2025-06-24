@@ -33,7 +33,7 @@ import CardIcon from "components/Card/CardIcon.js";
 import GridItem from "components/Grid/GridItem.js";
 const MAP_CONTAINER_STYLE = {
   width: "100%",
-  height: "600px",
+  height: "550px",
 };
 import { makeStyles } from "@material-ui/core/styles";
 import styles from "assets/jss/material-dashboard-react/views/dashboardStyle.js";

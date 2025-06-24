@@ -731,7 +731,7 @@ app.get("/api/total-bins-today", async (req, res) => {
     const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
 
     const [rows] = await connection.execute(
-      "SELECT COUNT(*) AS total FROM tb_smartbin WHERE sb_day LIKE ?",
+      "SELECT COUNT(*) AS total FROM tb_smartbin WHERE sb_day LIKE ? AND sb_status=1",
       [`%${today}%`]
     );
     await connection.end();
