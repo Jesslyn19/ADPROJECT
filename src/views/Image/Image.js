@@ -129,7 +129,7 @@ export default function ImagePage() {
 
   const fetchSmartBins = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/smartbins");
+      const res = await axios.get("http://localhost:5000/api/allsmartbins");
       setBinPlates(res.data.map((bin) => bin.sb_plate.toLowerCase())); // Normalize to lowercase
     } catch (error) {
       console.error("Error fetching smartbin data:", error);
