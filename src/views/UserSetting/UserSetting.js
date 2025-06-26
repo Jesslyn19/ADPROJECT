@@ -175,7 +175,7 @@ const UserSetting = () => {
     <Container maxWidth="lg">
       <Paper
         elevation={3}
-        style={{ marginTop: 40, padding: 30, borderRadius: 20 }}
+        style={{ marginTop: 20, padding: 20, borderRadius: 20 }}
       >
         <Box display="flex" flexDirection="row" alignItems="flex-start">
           {/* Left: Avatar */}

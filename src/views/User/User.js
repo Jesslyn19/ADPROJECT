@@ -472,7 +472,7 @@ export default function User() {
         <CircularProgress />
       ) : (
         <TableContainer component={Paper}>
-          <Box sx={{ maxHeight: "57vh", overflow: "auto" }}>
+          <Box sx={{ maxHeight: "54vh", overflow: "auto" }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
