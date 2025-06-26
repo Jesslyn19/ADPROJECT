@@ -10,6 +10,7 @@ import routes from "driversroutes";
 import styles from "assets/jss/material-dashboard-react/layouts/adminStyle.js";
 import bgImage from "assets/img/sidebar-2.jpg";
 import logo from "assets/img/logo.png";
+// import FixedPlugin from "components/FixedPlugin/FixedPlugin.js";
 
 let ps;
 
@@ -42,7 +43,7 @@ export default function Driver({ ...rest }) {
   // eslint-disable-next-line no-unused-vars
   const [image, setImage] = React.useState(bgImage);
   // eslint-disable-next-line no-unused-vars
-  const [color, setColor] = React.useState("green"); // Changed default color for driver view
+  const [color, setColor] = React.useState("blue"); // Changed default color for driver view
   //const [fixedClasses, setFixedClasses] = React.useState("dropdown show");
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
