@@ -38,6 +38,7 @@ const useStyles = makeStyles(styles);
 const MAP_CONTAINER_STYLE = {
   width: "100%",
   height: "100%",
+  marginBottom: "0",
   borderRadius: "8px",
   border: "1px solid #e2e8f0",
   backgroundColor: "black",
@@ -46,6 +47,7 @@ const MAP_CONTAINER_STYLE = {
 const MAP_PANEL_STYLE = {
   flexGrow: 1,
   height: "100%",
+  marginBottom: "0",
 };
 
 const DEFAULT_ZOOM = 14;
@@ -609,7 +611,7 @@ const DriverMaps = () => {
               </CardHeader>
               <div
                 style={{
-                  height: "65vh",
+                  height: "55vh",
                   overflowY: "auto",
                   padding: "16px",
                 }}
@@ -1001,7 +1003,7 @@ const DriverMaps = () => {
           </GridItem>
 
           {/* Map Panel */}
-          <GridItem xs={12} sm={6} md={8}>
+          <GridItem xs={12} sm={6} md={8} style={{ marginBottom: "0" }}>
             <div style={MAP_PANEL_STYLE}>
               {isGoogleApiLoaded && (
                 <GoogleMap
