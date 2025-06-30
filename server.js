@@ -128,7 +128,6 @@ app.put("/api/images/:id", async (req, res) => {
 app.get("/api/tasks", async (req, res) => {
   try {
     const { date } = req.query;
-
     const selectedDate = date || new Date().toISOString().split("T")[0];
 
     const connection = await mysql.createConnection(dbConfig);
@@ -145,9 +144,18 @@ app.get("/api/tasks", async (req, res) => {
         i.i_date
       FROM tb_smartbin s
       LEFT JOIN tb_truck t ON s.t_id = t.t_id
-      LEFT JOIN tb_image i 
-        ON s.sb_plate = i.i_plate AND DATE(i.i_date) = ?
-      WHERE sb_status = 1 AND FIND_IN_SET(DAYNAME(?), REPLACE(s.sb_day, ' ', ''))
+      LEFT JOIN (
+        SELECT i1.*
+        FROM tb_image i1
+        INNER JOIN (
+          SELECT i_plate, MAX(CONCAT(i_date, ' ', i_time)) AS max_datetime
+          FROM tb_image
+          WHERE DATE(i_date) = ?
+          GROUP BY i_plate
+        ) latest ON i1.i_plate = latest.i_plate AND CONCAT(i1.i_date, ' ', i1.i_time) = latest.max_datetime
+      ) i ON s.sb_plate = i.i_plate
+      WHERE s.sb_status = 1
+        AND FIND_IN_SET(DAYNAME(?), REPLACE(s.sb_day, ' ', ''))
       ORDER BY s.sb_id ASC
       `,
       [selectedDate, selectedDate]
@@ -166,6 +174,7 @@ app.get("/api/tasks", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // ===============================
 // 👤 Customer Routes
