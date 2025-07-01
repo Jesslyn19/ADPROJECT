@@ -142,11 +142,6 @@ export default function Bin() {
   };
 
   const handleDialogSave = async () => {
-    // Validate the fields before proceeding
-    // if (!validate(editingBin)) {
-    //   alert("Please fill in all required fields.");
-    //   return;
-    // }
     try {
       const payload = {
         ...editingBin,
@@ -400,14 +395,6 @@ export default function Bin() {
         </Paper>
       )}
       <br></br>
-      {/* <TextField
-        label="Search by Bin Plate"
-        value={searchQuery}
-        onChange={handleSearchChange}
-        fullWidth
-        variant="outlined"
-        style={{ marginBottom: 20 }}
-      /> */}
       <Box display="flex" alignItems="center" gap={2} marginBottom={2}>
         <FormControl
           style={{ minWidth: 250, marginRight: 10 }}

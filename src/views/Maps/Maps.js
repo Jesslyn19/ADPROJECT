@@ -1,4 +1,3 @@
-// Maps.js
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   GoogleMap,
@@ -56,7 +55,7 @@ const clusterBins = (bins) => {
   const dbscan = new DBSCAN();
   const data = bins.map((bin) => [bin.lat, bin.lng]);
 
-  const clustersIdx = dbscan.run(data, 0.003, 2); // eps, minPts
+  const clustersIdx = dbscan.run(data, 0.003, 2);
   let clusters = clustersIdx.map((cluster) => {
     const clusteredBins = cluster.map((i) => bins[i]);
     const center = {

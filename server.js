@@ -175,7 +175,6 @@ app.get("/api/tasks", async (req, res) => {
   }
 });
 
-
 // ===============================
 // 👤 Customer Routes
 // ===============================
@@ -582,13 +581,17 @@ app.post("/api/smartbins", async (req, res) => {
     const sb_longitude = parseFloat(lng);
 
     const connection = await mysql.createConnection(dbConfig);
-    
+
     const sb_plate_clean = Array.isArray(sb_plate) ? sb_plate[0] : sb_plate;
     const sb_floor_clean = Array.isArray(sb_floor) ? sb_floor[0] : sb_floor;
-    const sb_postcode_clean = Array.isArray(sb_postcode) ? sb_postcode[0] : sb_postcode;
+    const sb_postcode_clean = Array.isArray(sb_postcode)
+      ? sb_postcode[0]
+      : sb_postcode;
     const sb_city_clean = Array.isArray(sb_city) ? sb_city[0] : sb_city;
     const sb_state_clean = Array.isArray(sb_state) ? sb_state[0] : sb_state;
-    const sb_country_clean = Array.isArray(sb_country) ? sb_country[0] : sb_country;
+    const sb_country_clean = Array.isArray(sb_country)
+      ? sb_country[0]
+      : sb_country;
     const c_id_clean = Array.isArray(c_id) ? parseInt(c_id[0]) : parseInt(c_id);
     const sb_street_clean = Array.isArray(sb_street)
       ? sb_street.join(", ")
@@ -609,7 +612,7 @@ app.post("/api/smartbins", async (req, res) => {
         sb_latitude,
         sb_longitude,
         c_id_clean,
-        sb_day_string
+        sb_day_string,
       ]
     );
     await connection.end();
@@ -644,15 +647,27 @@ app.put("/api/smartbins/:id", async (req, res) => {
   // Clean values
   const sb_plate_clean = Array.isArray(sb_plate) ? sb_plate[0] : sb_plate;
   const sb_floor_clean = Array.isArray(sb_floor) ? sb_floor[0] : sb_floor;
-  const sb_postcode_clean = Array.isArray(sb_postcode) ? sb_postcode[0] : sb_postcode;
+  const sb_postcode_clean = Array.isArray(sb_postcode)
+    ? sb_postcode[0]
+    : sb_postcode;
   const sb_city_clean = Array.isArray(sb_city) ? sb_city[0] : sb_city;
   const sb_state_clean = Array.isArray(sb_state) ? sb_state[0] : sb_state;
-  const sb_country_clean = Array.isArray(sb_country) ? sb_country[0] : sb_country;
-  const sb_street_clean = Array.isArray(sb_street) ? sb_street.join(", ") : sb_street;
+  const sb_country_clean = Array.isArray(sb_country)
+    ? sb_country[0]
+    : sb_country;
+  const sb_street_clean = Array.isArray(sb_street)
+    ? sb_street.join(", ")
+    : sb_street;
   const c_id_clean = Array.isArray(c_id) ? parseInt(c_id[0]) : parseInt(c_id);
-  const t_id_clean = t_id ? (Array.isArray(t_id) ? parseInt(t_id[0]) : parseInt(t_id)) : null;
+  const t_id_clean = t_id
+    ? Array.isArray(t_id)
+      ? parseInt(t_id[0])
+      : parseInt(t_id)
+    : null;
   const sb_day_clean = Array.isArray(sb_day) ? sb_day.join(",") : sb_day;
-  const sb_id_clean = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const sb_id_clean = Array.isArray(req.params.id)
+    ? req.params.id[0]
+    : req.params.id;
 
   const fullAddress = `${sb_floor_clean}, ${sb_street_clean}, ${sb_postcode_clean}, ${sb_city_clean}, ${sb_state_clean}, ${sb_country_clean}`;
   console.log("Full address to geocode:", fullAddress);

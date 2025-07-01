@@ -10,7 +10,6 @@ import routes from "driversroutes";
 import styles from "assets/jss/material-dashboard-react/layouts/adminStyle.js";
 import bgImage from "assets/img/sidebar-2.jpg";
 import logo from "assets/img/logo.png";
-// import FixedPlugin from "components/FixedPlugin/FixedPlugin.js";
 
 let ps;
 
@@ -47,19 +46,6 @@ export default function Driver({ ...rest }) {
   //const [fixedClasses, setFixedClasses] = React.useState("dropdown show");
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
-  // const handleImageClick = (image) => {
-  //   setImage(image);
-  // };
-  // const handleColorClick = (color) => {
-  //   setColor(color);
-  // };
-  // const handleFixedClick = () => {
-  //   if (fixedClasses === "dropdown") {
-  //     setFixedClasses("dropdown show");
-  //   } else {
-  //     setFixedClasses("dropdown");
-  //   }
-  // };
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
@@ -110,27 +96,14 @@ export default function Driver({ ...rest }) {
           handleDrawerToggle={handleDrawerToggle}
           {...rest}
         />
-        {/* On the /driver/map route we want the map to be on full screen -
-            this is not possible if the content and container classes are present
-            because they have some paddings which would make the map smaller */}
-        {getRoute() ? ( // If not on /driver/map, use content/container classes
+        {getRoute() ? (
           <div className={classes.content}>
             <div className={classes.container}>{switchRoutes}</div>
           </div>
         ) : (
-          // If on /driver/map, use the map class for full screen
           <div className={classes.map}>{switchRoutes}</div>
         )}
         {getRoute() ? <Footer /> : null}{" "}
-        {/* Only show footer if not on full-screen map */}
-        {/* <FixedPlugin
-          handleImageClick={handleImageClick}
-          handleColorClick={handleColorClick}
-          bgColor={color}
-          bgImage={image}
-          handleFixedClick={handleFixedClick}
-          fixedClasses={fixedClasses}
-        /> */}
       </div>
     </div>
   );
