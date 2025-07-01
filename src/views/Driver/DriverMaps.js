@@ -108,27 +108,6 @@ const DriverMaps = () => {
   const isCurrentDayWeekend =
     new Date().toLocaleString("en-US", { weekday: "long" }) === "Saturday" ||
     new Date().toLocaleString("en-US", { weekday: "long" }) === "Sunday";
-
-  /* // Helper to get today's day name
-  const getTodayDayName = () => {
-    const d = new Date();
-    const weekday = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    return weekday[d.getDay()];
-  }; */
-
-  /* // Set initial selected day to today
-  useEffect(() => {
-    setSelectedDay(getTodayDayName());
-  }, []); */
-
   // --- Data Fetching for Initial Truck and its Bins ---
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -611,7 +590,7 @@ const DriverMaps = () => {
               </CardHeader>
               <div
                 style={{
-                  height: "55vh",
+                  height: "50vh",
                   overflowY: "auto",
                   padding: "16px",
                 }}
