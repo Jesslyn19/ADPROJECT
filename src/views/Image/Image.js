@@ -1,13 +1,11 @@
 ﻿import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import {
-  Box,
   Button,
   Table,
   TableHead,
   TableBody,
   TableCell,
-  TableContainer,
   TableRow,
   Paper,
   CircularProgress,
@@ -18,6 +16,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  //useMediaQuery,
 } from "@material-ui/core";
 
 export default function ImagePage() {
@@ -137,145 +136,157 @@ export default function ImagePage() {
   };
 
   return (
-    <div style={{ padding: 10 }}>
-      {/* 🔄 Top Controls Section */}
+    <div>
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "16px",
-          marginBottom: "16px",
-        }}
-      ></div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "16px",
-          marginBottom: "16px",
-        }}
-      >
-        <Typography
-          variant="h4"
-          gutterBottom
-          style={{ display: "flex", alignItems: "center", gap: 8 }}
-        >
-          Bin Plate Detection Records
-          {statusMessage && (
-            <Typography
-              variant="subtitle1"
-              component="span"
-              style={{ marginLeft: 8 }}
-            >
-              {statusMessage}
-            </Typography>
-          )}
-        </Typography>
-
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={refreshProcessing}
-          disabled={loading}
-          startIcon={loading && <CircularProgress size={20} />}
-          style={{ height: 40 }}
-        >
-          {loading ? "Processing..." : "🔄 Refresh (Detect New Image)"}
-        </Button>
-      </div>
-      <div
-        style={{
-          display: "flex",
-          gap: "16px",
-          flexWrap: "wrap",
-          alignItems: "center",
+          padding: 10,
           flex: 1,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <TextField
-          label="Search Plate"
-          variant="outlined"
-          size="small"
-          value={searchPlate}
-          onChange={(e) => setSearchPlate(e.target.value)}
-          style={{ minWidth: 180 }}
-        />
-        <TextField
-          select
-          label="Sort by Time"
-          variant="outlined"
-          size="small"
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-          style={{ minWidth: 180 }}
-        >
-          <MenuItem value="newest">Newest First</MenuItem>
-          <MenuItem value="oldest">Oldest First</MenuItem>
-        </TextField>
-        <TextField
-          label="Start Date"
-          type="date"
-          InputLabelProps={{ shrink: true }}
-          size="small"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          inputProps={{
-            max: endDate || undefined, // optional: prevent selecting startDate after endDate
+        {/* 🔄 Top Controls Section */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "16px",
+            marginBottom: "16px",
           }}
-        />
-        <TextField
-          label="End Date"
-          type="date"
-          InputLabelProps={{ shrink: true }}
-          size="small"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          inputProps={{
-            min: startDate || undefined, // restrict minimum selectable date
+        ></div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "16px",
+            marginBottom: "16px",
           }}
-        />
-        <TextField
-          select
-          label="Plate Status"
-          variant="outlined"
-          size="small"
-          value={plateStatusFilter}
-          onChange={(e) => setPlateStatusFilter(e.target.value)}
-          style={{ minWidth: 180 }}
         >
-          <MenuItem value="all">All</MenuItem>
-          <MenuItem value="attention">⚠️ With Attention</MenuItem>
-          <MenuItem value="no-attention">✅ No Attention</MenuItem>
-        </TextField>
-        <Button
-          variant="outlined"
-          color="secondary"
-          onClick={clearFilters}
-          style={{ height: "40px", alignSelf: "center" }}
-        >
-          Clear Filters
-        </Button>
-      </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "10px",
-          marginBottom: "10px",
-        }}
-      ></div>
-      {/* 🔤 Title */}
+          <Typography
+            variant="h4"
+            gutterBottom
+            style={{ display: "flex", alignItems: "center", gap: 8 }}
+          >
+            Bin Plate Detection Records
+            {statusMessage && (
+              <Typography
+                variant="subtitle1"
+                component="span"
+                style={{ marginLeft: 8 }}
+              >
+                {statusMessage}
+              </Typography>
+            )}
+          </Typography>
 
-      {/* 📋 Table Section */}
-      <TableContainer component={Paper}>
-        <Box sx={{ maxHeight: "60vh", overflow: "auto" }}>
-          <Table stickyHeader>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={refreshProcessing}
+            disabled={loading}
+            startIcon={loading && <CircularProgress size={20} />}
+            style={{ height: 40 }}
+          >
+            {loading ? "Processing..." : "🔄 Refresh (Detect New Image)"}
+          </Button>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            gap: "16px",
+            flexWrap: "wrap",
+            alignItems: "center",
+            flex: 1,
+          }}
+        >
+          <TextField
+            label="Search Plate"
+            variant="outlined"
+            size="small"
+            value={searchPlate}
+            onChange={(e) => setSearchPlate(e.target.value)}
+            style={{ minWidth: 180 }}
+          />
+          <TextField
+            select
+            label="Sort by Time"
+            variant="outlined"
+            size="small"
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            style={{ minWidth: 180 }}
+          >
+            <MenuItem value="newest">Newest First</MenuItem>
+            <MenuItem value="oldest">Oldest First</MenuItem>
+          </TextField>
+          <TextField
+            label="Start Date"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            size="small"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            inputProps={{
+              max: endDate || undefined, // optional: prevent selecting startDate after endDate
+            }}
+          />
+          <TextField
+            label="End Date"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            size="small"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            inputProps={{
+              min: startDate || undefined, // restrict minimum selectable date
+            }}
+          />
+          <TextField
+            select
+            label="Plate Status"
+            variant="outlined"
+            size="small"
+            value={plateStatusFilter}
+            onChange={(e) => setPlateStatusFilter(e.target.value)}
+            style={{ minWidth: 180 }}
+          >
+            <MenuItem value="all">All</MenuItem>
+            <MenuItem value="attention">⚠️ With Attention</MenuItem>
+            <MenuItem value="no-attention">✅ No Attention</MenuItem>
+          </TextField>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={clearFilters}
+            style={{ height: "40px", alignSelf: "center" }}
+          >
+            Clear Filters
+          </Button>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "10px",
+            marginBottom: "10px",
+          }}
+        ></div>
+        {/* 🔤 Title */}
+
+        {/* 📋 Table Section */}
+        <Paper
+          style={{
+            maxHeight: "60vh", // remove `calc(100vh - 300px)`
+            overflowY: "auto",
+          }}
+        >
+          <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
@@ -329,96 +340,96 @@ export default function ImagePage() {
               ))}
             </TableBody>
           </Table>
-        </Box>
-      </TableContainer>
+        </Paper>
 
-      <Dialog
-        open={openEdit}
-        onClose={() => setOpenEdit(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Edit Plate Number</DialogTitle>
+        <Dialog
+          open={openEdit}
+          onClose={() => setOpenEdit(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Edit Plate Number</DialogTitle>
 
-        {editImage ? (
-          <DialogContent dividers>
-            <Table size="small">
-              <TableBody>
-                <TableRow>
-                  <TableCell>
-                    <strong>ID</strong>
-                  </TableCell>
-                  <TableCell>{editImage.i_id}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <strong>File Name</strong>
-                  </TableCell>
-                  <TableCell>{editImage.i_file}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <strong>Capture Date</strong>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(editImage.i_date).toLocaleDateString()}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <strong>Capture Time</strong>
-                  </TableCell>
-                  <TableCell>{editImage.i_time}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <strong>Plate Number (Editable)</strong>
-                  </TableCell>
-                  <TableCell>
-                    <TextField
-                      value={editPlate}
-                      onChange={(e) => setEditPlate(e.target.value)}
-                      fullWidth
-                      autoFocus
-                      variant="outlined"
-                      size="small"
-                    />
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </DialogContent>
-        ) : (
-          <DialogContent>
-            <p>Loading...</p>
-          </DialogContent>
-        )}
+          {editImage ? (
+            <DialogContent dividers>
+              <Table size="small">
+                <TableBody>
+                  <TableRow>
+                    <TableCell>
+                      <strong>ID</strong>
+                    </TableCell>
+                    <TableCell>{editImage.i_id}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>
+                      <strong>File Name</strong>
+                    </TableCell>
+                    <TableCell>{editImage.i_file}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>
+                      <strong>Capture Date</strong>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(editImage.i_date).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>
+                      <strong>Capture Time</strong>
+                    </TableCell>
+                    <TableCell>{editImage.i_time}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>
+                      <strong>Plate Number (Editable)</strong>
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        value={editPlate}
+                        onChange={(e) => setEditPlate(e.target.value)}
+                        fullWidth
+                        autoFocus
+                        variant="outlined"
+                        size="small"
+                      />
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </DialogContent>
+          ) : (
+            <DialogContent>
+              <p>Loading...</p>
+            </DialogContent>
+          )}
 
-        <DialogActions>
-          <Button onClick={() => setOpenEdit(false)} color="secondary">
-            Cancel
-          </Button>
-          <Button
-            onClick={async () => {
-              try {
-                await axios.put(
-                  `http://localhost:5000/api/images/${editImage.i_id}`,
-                  { i_plate: editPlate.trim().toUpperCase() }
-                );
-                setOpenEdit(false);
-                fetchImages();
-              } catch (error) {
-                console.error("Error updating plate:", error);
-              }
-            }}
-            color="primary"
-            variant="contained"
-            disabled={!editImage} // disable save if no editImage
-          >
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <DialogActions>
+            <Button onClick={() => setOpenEdit(false)} color="secondary">
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                try {
+                  await axios.put(
+                    `http://localhost:5000/api/images/${editImage.i_id}`,
+                    { i_plate: editPlate.trim().toUpperCase() }
+                  );
+                  setOpenEdit(false);
+                  fetchImages();
+                } catch (error) {
+                  console.error("Error updating plate:", error);
+                }
+              }}
+              color="primary"
+              variant="contained"
+              disabled={!editImage} // disable save if no editImage
+            >
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </div>
     </div>
   );
 }

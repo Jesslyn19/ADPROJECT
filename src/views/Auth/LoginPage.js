@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
 
@@ -11,7 +11,14 @@ const LoginPage = () => {
   const [u_password, setUPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const history = useHistory();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -23,15 +30,12 @@ const LoginPage = () => {
       });
 
       if (response.data.success) {
-        console.log("Login response data:", response.data);
         const roleId = response.data.role_id;
-
-        // Save user role and logged-in status
         localStorage.setItem("role_id", roleId);
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("username", u_name);
         localStorage.setItem("userId", response.data.u_id);
-        localStorage.setItem("sessionExpiry", expiryTime); // optionally save username
+        localStorage.setItem("sessionExpiry", expiryTime);
         localStorage.setItem("showMissedAlert", response.data.missedCount ?? 0);
 
         if (roleId === 1) history.push("/admin/dashboard");
@@ -49,19 +53,23 @@ const LoginPage = () => {
   return (
     <div
       style={{
-        height: "100vh",
+        minHeight: "100vh",
         background: "#f0f2f5",
         display: "flex",
         justifyContent: "center",
-        alignItems: "center",
+        alignItems: isMobile ? "flex-start" : "center", // allow top scroll on mobile
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        padding: isMobile ? "20px" : "0",
+        overflowY: "auto",
       }}
     >
       <div
         style={{
           display: "flex",
-          width: "800px",
-          height: "480px",
+          flexDirection: isMobile ? "column" : "row",
+          width: isMobile ? "100%" : "800px",
+          maxWidth: "100%",
+          height: isMobile ? "auto" : "480px",
           borderRadius: "16px",
           overflow: "hidden",
           boxShadow: "0 12px 32px rgba(0, 0, 0, 0.2)",
@@ -79,29 +87,29 @@ const LoginPage = () => {
             justifyContent: "center",
             alignItems: "center",
             padding: "30px",
+            textAlign: "center",
           }}
         >
-          <img src={logo} />
-          <h1
+          <img
+            src={logo}
             style={{
-              fontSize: "28px",
-              marginBottom: "12px",
+              width: isMobile ? "100px" : "120px",
+              marginBottom: "20px",
             }}
-          >
+          />
+          <h1 style={{ fontSize: "24px", marginBottom: "12px" }}>
             Welcome Back
           </h1>
-          <p
-            style={{ fontSize: "16px", textAlign: "center", maxWidth: "220px" }}
-          >
+          <p style={{ fontSize: "15px", maxWidth: "240px" }}>
             Sign in to manage your smart waste dashboard efficiently.
           </p>
         </div>
 
-        {/* Right Panel - Login Form */}
+        {/* Right Panel */}
         <div
           style={{
             flex: 1,
-            padding: "40px 30px",
+            padding: "30px",
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
@@ -110,7 +118,7 @@ const LoginPage = () => {
           <h2
             style={{
               marginBottom: "20px",
-              fontSize: "24px",
+              fontSize: "22px",
               fontWeight: "600",
               color: "#333",
             }}
@@ -160,13 +168,13 @@ const LoginPage = () => {
             </label>
             <div style={{ position: "relative", marginBottom: "16px" }}>
               <input
-                type={showPassword ? "text" : "password"} // NEW
+                type={showPassword ? "text" : "password"}
                 value={u_password}
                 onChange={(e) => setUPassword(e.target.value)}
                 required
                 style={{
                   width: "100%",
-                  padding: "12px 48px 12px 12px", // leave space for the icon
+                  padding: "12px 48px 12px 12px",
                   borderRadius: "8px",
                   border: "1.8px solid #ccc",
                   fontSize: "16px",
@@ -176,8 +184,6 @@ const LoginPage = () => {
                 onFocus={(e) => (e.target.style.borderColor = "#667eea")}
                 onBlur={(e) => (e.target.style.borderColor = "#ccc")}
               />
-
-              {/* Toggle button */}
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
@@ -195,7 +201,7 @@ const LoginPage = () => {
                   color: "#667eea",
                 }}
               >
-                {showPassword ? "🙈" : "👁️"} {/* or swap in any icon library */}
+                {showPassword ? "🙈" : "👁️"}
               </button>
             </div>
 

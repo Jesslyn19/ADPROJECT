@@ -187,7 +187,7 @@ const UserSetting = () => {
             marginRight={4}
           >
             <Avatar
-              key={avatarKey} // <- force remount on key change
+              key={avatarKey}
               alt="Profile"
               src={
                 user.u_url && user.u_url.trim() !== ""
@@ -197,11 +197,16 @@ const UserSetting = () => {
                   : "/images/DefaultProfileImage.png"
               }
               style={{
-                width: 150,
-                height: 150,
+                width: "20vw",
+                maxWidth: 150,
+                minWidth: 80,
+                aspectRatio: "1",
+                height: "auto",
+                borderRadius: "50%",
                 marginBottom: 10,
                 border: "3px solid #3f51b5",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                objectFit: "cover",
               }}
             />
             {/* Hidden file input */}
@@ -241,8 +246,10 @@ const UserSetting = () => {
                   src={URL.createObjectURL(selectedFile)}
                   alt="Preview"
                   style={{
-                    width: 150,
-                    height: 150,
+                    width: "20vw",
+                    maxWidth: 150,
+                    minWidth: 80,
+                    aspectRatio: "1",
                     borderRadius: "50%",
                     objectFit: "cover",
                     border: "2px solid #3f51b5",
