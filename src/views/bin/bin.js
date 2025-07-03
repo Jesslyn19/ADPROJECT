@@ -395,9 +395,15 @@ export default function Bin() {
         </Paper>
       )}
       <br></br>
-      <Box display="flex" alignItems="center" gap={2} marginBottom={2}>
+      <Box
+        display="flex"
+        alignItems="center"
+        gap={2}
+        marginBottom={2}
+        style={{ flexWrap: "wrap" }}
+      >
         <FormControl
-          style={{ minWidth: 250, marginRight: 10 }}
+          style={{ minWidth: 250, marginRight: 10, marginBottom: "1rem" }}
           variant="outlined"
         >
           <TextField
@@ -408,7 +414,10 @@ export default function Bin() {
             variant="outlined"
           />
         </FormControl>
-        <FormControl style={{ minWidth: 250 }} variant="outlined">
+        <FormControl
+          style={{ minWidth: 250, marginBottom: "1rem" }}
+          variant="outlined"
+        >
           <InputLabel id="filter-day-label">Filter by Day</InputLabel>
           <Select
             labelId="filter-day-label"
@@ -430,7 +439,7 @@ export default function Bin() {
           variant="contained"
           color="primary"
           onClick={() => setFilterDay(tempFilterDay)}
-          style={{ margin: 10 }}
+          style={{ marginRight: 10, marginBottom: "1rem", marginLeft: 10 }}
         >
           Apply
         </Button>
@@ -442,6 +451,7 @@ export default function Bin() {
             setTempFilterDay([]);
             setFilterDay([]);
           }}
+          style={{ marginBottom: "1rem" }}
         >
           Clear
         </Button>

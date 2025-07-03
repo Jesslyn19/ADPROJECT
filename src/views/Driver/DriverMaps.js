@@ -37,7 +37,7 @@ const useStyles = makeStyles(styles);
 // Constants
 const MAP_CONTAINER_STYLE = {
   width: "100%",
-  height: "100%",
+  height: "72vh",
   marginBottom: "0",
   borderRadius: "8px",
   border: "1px solid #e2e8f0",
@@ -47,7 +47,6 @@ const MAP_CONTAINER_STYLE = {
 const MAP_PANEL_STYLE = {
   flexGrow: 1,
   height: "100%",
-  marginBottom: "0",
 };
 
 const DEFAULT_ZOOM = 14;
@@ -580,7 +579,7 @@ const DriverMaps = () => {
         <GridContainer>
           {/* Controls Panel */}
           <GridItem xs={12} sm={6} md={4}>
-            <Card>
+            <Card style={{ height: "100%", marginBottom: "0" }}>
               <CardHeader color="primary" stats icon>
                 <CardIcon color="primary">
                   <Icon>map</Icon>
@@ -590,7 +589,7 @@ const DriverMaps = () => {
               </CardHeader>
               <div
                 style={{
-                  height: "50vh",
+                  height: "55vh",
                   overflowY: "auto",
                   padding: "16px",
                 }}
